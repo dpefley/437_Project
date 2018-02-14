@@ -15,10 +15,29 @@
 /* Modal Content/Box */
 .modal-content {
     background-color: #fefefe;
+    color: black;
     margin: 15% auto; /* 15% from the top and centered */
     padding: 20px;
     border: 1px solid #888;
     width: 80%; /* Could be more or less, depending on screen size */
+}
+
+body {
+    background-image: url("https://upload.wikimedia.org/wikipedia/en/thumb/6/68/Washington_University_Bears_logo.svg/1200px-Washington_University_Bears_logo.svg.png");
+    background-size: 600px 500px;
+    background-repeat: no-repeat;
+    background-position: 50% 25px;
+    z-index: -1;
+}
+
+.getstarted {
+    background-color: #8E1417;
+    padding: 14px 40px;
+    position:absolute;
+    transition: .5s ease;
+    top: 50%;
+    left: 43%;
+    color: white;
 }
 
 /* The Close Button */
@@ -70,4 +89,8 @@
     padding: 6px 12px;
     border: 1px solid #ccc;
     border-top: none;
+}
+
+.createfields {
+    font-size: 12px;
 }

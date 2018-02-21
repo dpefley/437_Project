@@ -10,9 +10,10 @@
 		<h3>
 			<label>Create Account</label>
 			<div id="CreateFields" class="createfields">
-				<form action="CreateAccountSignIn.html">
+				<form onSubmit="return create_user()">
 					<lable>Email Address:<input type="text" id="user_email" placeholder="Email Address"></input>
 					<br>
+					<lable>Password:<input type="password" id="user_password" placeholder="Password"></input>
 					<input type="submit" value="Submit"></input>
 				</form>
 			</div>
@@ -20,6 +21,16 @@
 	</div>
 
 	<div id="SignIn" class="tabcontent">
-	  <h3>Sign In</h3>
+	  <h3>
+			<label>SignIn</label>
+			<div id="CreateFields" class="createfields">
+				<form onSubmit="return sign_in()">
+					<lable>Email Address:<input type="text" id="ret_user_email" placeholder="Email Address"></input>
+					<br>
+					<lable>Password:<input type="password" id="ret_user_password" placeholder="Password"></input>
+					<input type="submit" value="Submit"></input>
+				</form>
+			</div>
+	  	</h3>
 	</div>
 </div>

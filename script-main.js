@@ -1,5 +1,18 @@
+
+
 // Modal Window for Create Account
 init = function() {
+	// Initialize Firebase
+	var config = {
+	    apiKey: "AIzaSyBJ1LF8ns8WLgNp_qOAby0FwrSGCYvU_iQ",
+	    authDomain: "washuplan.firebaseapp.com",
+	    databaseURL: "https://washuplan.firebaseio.com",
+	    projectId: "washuplan",
+	    storageBucket: "washuplan.appspot.com",
+		messagingSenderId: "198489680934"
+	};
+	firebase.initializeApp(config);
+
 	var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/CreateAccountSignIn.html";
 	fetch_text(htmlPage).then((html) => {
         document.getElementById("surround_modal_content").innerHTML = html;
@@ -38,6 +51,33 @@ function fetch_text (url) {
     return fetch(url).then((response) => (response.text()));
 }
 
+// New User Creation
+function create_user () {
+	var email = document.getElementById("user_email").value;
+	var password = document.getElementById("user_password").value;
+	firebase.auth().createUserWithEmailAndPassword(email, password).catch(function(error) {
+		//Handle Errors here
+		var errorCode = error.code;
+		var errorMessage = error.message; // Probably show this to user in some way
+		alert(errorMessage);
+	});
+	//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+}
+
+// Returning User Sign In
+function sign_in () {
+	var email = document.getElementById("ret_user_email").value;
+	var password = document.getElementById("ret_user_password").value;
+	firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
+		//Handle Errors here
+		var errorCode = error.code;
+		var errorMessage = error.message; // Probably show this to user in some way
+		alert(errorMessage);
+	});
+	//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+}
+
+// Modal Example
 function openCity(evt, cityName) {
     // Declare all variables
     var i, tabcontent, tablinks;

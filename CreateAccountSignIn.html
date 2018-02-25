@@ -10,12 +10,10 @@
 		<h3>
 			<label>Create Account</label>
 			<div id="CreateFields" class="createfields">
-				<form onSubmit="return create_user()">
-					<lable>Email Address:<input type="text" id="user_email" placeholder="Email Address"></input>
-					<br>
-					<lable>Password:<input type="password" id="user_password" placeholder="Password"></input>
-					<input type="submit" value="Submit"></input>
-				</form>
+				<lable>Email Address:<input type="text" id="user_email" placeholder="Email Address"></input>
+				<br>
+				<lable>Password:<input type="password" id="user_password" placeholder="Password"></input>
+				<button type="submit" id="create_submit" onclick="create_listen()">Create Account</button>
 			</div>
 	  	</h3>
 	</div>
@@ -24,12 +22,10 @@
 	  <h3>
 			<label>SignIn</label>
 			<div id="CreateFields" class="createfields">
-				<form onSubmit="return sign_in()">
-					<lable>Email Address:<input type="text" id="ret_user_email" placeholder="Email Address"></input>
-					<br>
-					<lable>Password:<input type="password" id="ret_user_password" placeholder="Password"></input>
-					<input type="submit" value="Submit"></input>
-				</form>
+				<lable>Email Address:<input type="text" id="ret_user_email" placeholder="Email Address"></input>
+				<br>
+				<lable>Password:<input type="password" value="submit" id="ret_user_password" placeholder="Password"></input>
+				<button type="submit" id="sign_submit" value="submit" onclick="sign_listen()">Sign In</button>
 			</div>
 	  	</h3>
 	</div>

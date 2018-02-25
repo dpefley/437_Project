@@ -19,4 +19,5 @@ function sign_out () {
 	}).catch(function(error) {
 		//An error occurred... (Not signed in?)
 	});
+	window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/WashUPlan.html";
 }

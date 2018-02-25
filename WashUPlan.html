@@ -10,10 +10,9 @@
 				font-style: italic;
 				color: black;
 				font-family: "Comic Sans MS", cursive, sans-serif;
+				font-size: 130%;
 			}
 		</style>
-
-
 		<script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
 		<script src="https://www.gstatic.com/firebasejs/4.9.0/firebase-auth.js"></script>
 		<script src="https://www.gstatic.com/firebasejs/4.9.0/firebase-database.js"></script>
@@ -21,37 +20,30 @@
 	</head>
 
 	<body>
+		<center><label class="centered_title">WashUPlan ~ WashU Plannin' to do at WashU?</label></center>
+		<br><br><br><br><br><br><br><br><br><br>
 		<table style="width:100%" id="header_bar">
 			<tr>
-				<th><button type="button">Login</button></th>
-				<th><button type="button">Password Reset</button></th>
+				<!-- <th><button type="button">Login</button></th> -->
+				<!-- <th><button type="button">Password Reset</button></th> -->
+				<th></th>
 				<th>
-					<button id="myBtn">Open Modal</button>
-
+					<button id="myBtn">Login or Create an Account to Get Started!</button>
 					<!-- The Modal -->
 					<div id="myModal" class="modal">
-
 					  <!-- Modal content -->
 					  <div class="modal-content">
 					    <span class="close">&times;</span>
 					    <div id="surround_modal_content"></div>
 					  </div>
-
 					</div>
 				</th> 
-
-				
-
-				<th><label>WashUPlan ~ Plan your future at WashU!</label></th>
-				<th><button type="button">Tools</button></th>
+				<th></th>
+				<!-- <th><button type="button">Tools</button></th>
 				<th><button type="button">FAQ</button></th>
-				<th><button type="button">HowTo</button></th>
+				<th><button type="button">HowTo</button></th> -->
 			</tr>
 		</table>
-
-		<br>
-		<br>
-		<button type="button" class="getstarted">Click to Get Started!</button>
 		
 		<script type="text/javascript">
 			init();

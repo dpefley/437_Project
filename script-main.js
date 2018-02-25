@@ -1,14 +1,12 @@
-
-
 // Modal Window for Create Account
 init = function() {
-	// Initialize Firebase
+// Initialize Firebase
 	var config = {
-	    apiKey: "AIzaSyBJ1LF8ns8WLgNp_qOAby0FwrSGCYvU_iQ",
-	    authDomain: "washuplan.firebaseapp.com",
-	    databaseURL: "https://washuplan.firebaseio.com",
-	    projectId: "washuplan",
-	    storageBucket: "washuplan.appspot.com",
+		apiKey: "AIzaSyBJ1LF8ns8WLgNp_qOAby0FwrSGCYvU_iQ",
+		authDomain: "washuplan.firebaseapp.com",
+		databaseURL: "https://washuplan.firebaseio.com",
+		projectId: "washuplan",
+		storageBucket: "washuplan.appspot.com",
 		messagingSenderId: "198489680934"
 	};
 	firebase.initializeApp(config);
@@ -51,6 +49,10 @@ function fetch_text (url) {
     return fetch(url).then((response) => (response.text()));
 }
 
+function create_listen(){
+	document.getElementById('create_submit').addEventListener('click', create_user());
+}
+
 // New User Creation
 function create_user () {
 	var email = document.getElementById("user_email").value;
@@ -60,8 +62,13 @@ function create_user () {
 		var errorCode = error.code;
 		var errorMessage = error.message; // Probably show this to user in some way
 		alert(errorMessage);
+		alert(errorCode);
 	});
-	//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+	window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+}
+
+function sign_listen(){
+	document.getElementById('sign_submit').addEventListener('click', sign_in());
 }
 
 // Returning User Sign In
@@ -73,8 +80,9 @@ function sign_in () {
 		var errorCode = error.code;
 		var errorMessage = error.message; // Probably show this to user in some way
 		alert(errorMessage);
+		alert(errorCode);
 	});
-	//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+	window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
 }
 
 // Modal Example

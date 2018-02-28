@@ -310,8 +310,11 @@ init = function() {
 	var departmentDropdown = document.getElementById("DepartmentDropdown");
 	var courseTable = document.getElementById("course_listing");
 
+	populateSemesterDropdown(semesterDropdown);
+
 	semesterDropdown.addEventListener("change", function() {
 		if (semesterDropdown.value() != "Select Semester") {
+			populateSchoolDropdown(schoolDropdown);
 			schoolDropdown.style.display = "block";
 		}
 		else {
@@ -325,6 +328,7 @@ init = function() {
 
 	schoolDropdown.addEventListener("change", function() {
 		if (schoolDropdown.value() != "Select School") {
+			populateDepartmentDropdown(departmentDropdown, schoolDropdown.value());
 			departmentDropdown.style.display = "block";
 		}
 		else {
@@ -342,7 +346,43 @@ init = function() {
 			courseTable.empty();
 		}
 	});
+}
 
+function populateSemesterDropdown(semesterDropdown) {
+	var defaultOptionSemester = document.createElement("option");
+	defaultOptionSemester.text = "Select Semester";
+	semesterDropdown.add(defaultOptionSemester);
+	for (var semester in testSemesters) {
+		if (testSemesters.hasOwnProperty(semester)) {
+			var option = document.createElement("option");
+			option.text = testSemesters[semester];
+			semesterDropdown.add(option);
+		}
+	}
+}
+
+function populateSchoolDropdown(schoolDropdown) {
+	var defaultOptionSemester = document.createElement("option");
+	defaultOptionSemester.text = "Select School";
+	semesterDropdown.add(defaultOptionSemester);
+	for (var school in testSchools) {
+		if (testSemesters.hasOwnProperty(semester)) {
+			var option = document.createElement("option");
+			option.text = school;
+			schoolDropdown.add(option);
+		}
+	}
+}
+
+function populateDepartmentDropdown(departmentDropdown, selectedSchool) {
+	var defaultOptionSemester = document.createElement("option");
+	defaultOptionSemester.text = "Select School";
+	semesterDropdown.add(defaultOptionSemester);
+	var schoolDepartments = testSchools[selectedSchool].Departments;
+	for (var department in schoolDepartments) {
+		var option = document.createElement("option");
+		option.text = department;
+		departmentDropdown.add(option);
 	}
 }
 

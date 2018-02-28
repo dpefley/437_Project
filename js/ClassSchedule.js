@@ -313,33 +313,34 @@ init = function() {
 	populateSemesterDropdown(semesterDropdown);
 
 	semesterDropdown.addEventListener("change", function() {
-		if (semesterDropdown.value() != "Select Semester") {
+		if (semesterDropdown.value != "Select Semester") {
 			populateSchoolDropdown(schoolDropdown);
 			schoolDropdown.style.display = "block";
 		}
 		else {
 			schoolDropdown.style.display = "none";
-			schoolDropdown.value("Select School");
+			schoolDropdown.value = "Select School";
 			departmentDropdown.style.display = "none";
-			departmentDropdown.value("Select Department");
+			departmentDropdown.value = "Select Department";
 			courseTable.empty();
 		}
 	});
 
 	schoolDropdown.addEventListener("change", function() {
-		if (schoolDropdown.value() != "Select School") {
-			populateDepartmentDropdown(departmentDropdown, schoolDropdown.value());
+		alert(schoolDropdown.value);
+		if (schoolDropdown.value != "Select School") {
+			populateDepartmentDropdown(departmentDropdown, schoolDropdown.value);
 			departmentDropdown.style.display = "block";
 		}
 		else {
 			departmentDropdown.style.display = "none";
-			departmentDropdown.value("Select Department");
+			departmentDropdown.value = "Select Department";
 			courseTable.empty();
 		}
 	});
 
 	departmentDropdown.addEventListener("change", function() {
-		if (departmentDropdown.value() != "Select Department") {
+		if (departmentDropdown.value != "Select Department") {
 			populateCourseTable();
 		}
 		else {
@@ -362,11 +363,12 @@ function populateSemesterDropdown(semesterDropdown) {
 }
 
 function populateSchoolDropdown(schoolDropdown) {
+	emptyDropdown(schoolDropdown);
 	var defaultOptionSemester = document.createElement("option");
 	defaultOptionSemester.text = "Select School";
-	semesterDropdown.add(defaultOptionSemester);
+	schoolDropdown.add(defaultOptionSemester);
 	for (var school in testSchools) {
-		if (testSemesters.hasOwnProperty(semester)) {
+		if (testSchools.hasOwnProperty(school)) {
 			var option = document.createElement("option");
 			option.text = school;
 			schoolDropdown.add(option);
@@ -375,14 +377,22 @@ function populateSchoolDropdown(schoolDropdown) {
 }
 
 function populateDepartmentDropdown(departmentDropdown, selectedSchool) {
+	emptyDropdown(departmentDropdown);
 	var defaultOptionSemester = document.createElement("option");
 	defaultOptionSemester.text = "Select School";
-	semesterDropdown.add(defaultOptionSemester);
+	departmentDropdown.add(defaultOptionSemester);
 	var schoolDepartments = testSchools[selectedSchool].Departments;
 	for (var department in schoolDepartments) {
 		var option = document.createElement("option");
-		option.text = department;
+		option.text = schoolDepartments[department];
 		departmentDropdown.add(option);
+	}
+}
+
+function emptyDropdown(dropdown) {
+	var lenght = dropdown.options.length;
+	for (i = 0; i < length; i++) {
+		dropdown.options[i] = null;
 	}
 }
 

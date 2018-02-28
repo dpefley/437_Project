@@ -24,7 +24,7 @@
 		<button id="sign_out" onclick="sign_out()">Sign Out</button><br><br>
 
 		<!-- Table for class options and placement -->
-		<table id="course_listing" border="2" width="100%" bgcolor="#fefefe">
+		<table border="2" width="100%" bgcolor="#fefefe">
 			<tr>
 				<td style="width:33%">
 					<select id="SemesterDropdown">
@@ -39,13 +39,23 @@
 
 					</select>
 					<br><br>
+
+
+
 				</td>
-				<td style="width:67%">
+				<td rowspan="2" style="width:67%">
 					<!-- Area for class placement -->
 
-
-
 				</td>
+			</tr>
+			<tr>
+				<td>
+					<table id="course_listing">
+						<!-- Blank area for courses -->
+
+					</table>
+				</td>
+
 			</tr>
 		</table>
 		<script type="text/javascript">

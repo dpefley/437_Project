@@ -118,3 +118,30 @@
 .createfields {
     font-size: 12px;
 }
+
+#course_listing {
+    width: 95%;
+    margin: auto;
+}
+
+.course_column {
+    height: 48px;
+    width: 80%;
+}
+
+.action_column {
+  width: 20%;
+  text-align: center;
+}
+
+.odd_course_column {
+    background-color: #CCCCCC;
+}
+
+.code_div {
+    float: left;
+}
+
+.unit_div {
+    float: right;
+}

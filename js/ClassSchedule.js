@@ -379,7 +379,7 @@ function populateSchoolDropdown(schoolDropdown) {
 function populateDepartmentDropdown(departmentDropdown, selectedSchool) {
 	emptyDropdown(departmentDropdown);
 	var defaultOptionSemester = document.createElement("option");
-	defaultOptionSemester.text = "Select School";
+	defaultOptionSemester.text = "Select Department";
 	departmentDropdown.add(defaultOptionSemester);
 	var schoolDepartments = testSchools[selectedSchool].Departments;
 	for (var department in schoolDepartments) {

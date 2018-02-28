@@ -16,8 +16,13 @@ init = function() {
 function sign_out () {
 	firebase.auth().signOut().then(function() {
 		//Push back to welcome page
+		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/WashUPlan.html";
+		alert("Successfully Signed Out");
 	}).catch(function(error) {
 		//An error occurred... (Not signed in?)
+		var errorMessage = error.message;
+		var errorCode = error.code;
+		alert(errorMessage);
+		//alert(errorCode);
 	});
-	window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/WashUPlan.html";
 }

@@ -49,40 +49,34 @@ function fetch_text (url) {
     return fetch(url).then((response) => (response.text()));
 }
 
-function create_listen(){
-	document.getElementById('create_submit').addEventListener('click', create_user());
-}
-
 // New User Creation
 function create_user () {
 	var email = document.getElementById("user_email").value;
 	var password = document.getElementById("user_password").value;
-	firebase.auth().createUserWithEmailAndPassword(email, password).catch(function(error) {
+	firebase.auth().createUserWithEmailAndPassword(email, password).then(function() {
+		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+	}).catch(function(error) {
 		//Handle Errors here
 		var errorCode = error.code;
 		var errorMessage = error.message; // Probably show this to user in some way
 		alert(errorMessage);
-		alert(errorCode);
+		//alert(errorCode);
 	});
-	window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
-}
-
-function sign_listen(){
-	document.getElementById('sign_submit').addEventListener('click', sign_in());
 }
 
 // Returning User Sign In
 function sign_in () {
 	var email = document.getElementById("ret_user_email").value;
 	var password = document.getElementById("ret_user_password").value;
-	firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
+	firebase.auth().signInWithEmailAndPassword(email, password).then(function() {
+		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+	}).catch(function(error) {
 		//Handle Errors here
 		var errorCode = error.code;
 		var errorMessage = error.message; // Probably show this to user in some way
 		alert(errorMessage);
-		alert(errorCode);
+		//alert(errorCode);
 	});
-	window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
 }
 
 // Modal Example

@@ -46,7 +46,7 @@
     width: 80%; /* Could be more or less, depending on screen size */
 }
 
-body {
+#body_area {
     background-image: url("https://upload.wikimedia.org/wikipedia/en/thumb/6/68/Washington_University_Bears_logo.svg/1200px-Washington_University_Bears_logo.svg.png");
     background-size: 600px 500px;
     background-repeat: no-repeat;

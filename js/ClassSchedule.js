@@ -322,7 +322,7 @@ init = function() {
 			schoolDropdown.value = "Select School";
 			departmentDropdown.style.display = "none";
 			departmentDropdown.value = "Select Department";
-			courseTable.empty();
+			emptyTable();
 		}
 	});
 
@@ -335,7 +335,7 @@ init = function() {
 		else {
 			departmentDropdown.style.display = "none";
 			departmentDropdown.value = "Select Department";
-			courseTable.empty();
+			emptyTable();
 		}
 	});
 
@@ -344,7 +344,7 @@ init = function() {
 			populateCourseTable();
 		}
 		else {
-			courseTable.empty();
+			emptyTable();
 		}
 	});
 }
@@ -390,9 +390,17 @@ function populateDepartmentDropdown(departmentDropdown, selectedSchool) {
 }
 
 function emptyDropdown(dropdown) {
-	var lenght = dropdown.options.length;
-	for (i = 0; i < length; i++) {
-		dropdown.options[i] = null;
+	while(dropdown.hasChildNodes())
+	{
+	   dropdown.removeChild(dropdown.firstChild);
+	}
+}
+
+function emptyTable() {
+	var Parent = document.getElementById("course_listing");
+	while(Parent.hasChildNodes())
+	{
+	   Parent.removeChild(dropdown.firstChild);
 	}
 }
 

@@ -11,6 +11,13 @@
 				color: black;
 				font-family: "Comic Sans MS", cursive, sans-serif;
 			}
+
+			#div1 {
+				width: 250px;
+				height: 70px;
+				padding: 10px;
+				border: 1px solid #aaaaaa;
+			}
 		</style>
 
 
@@ -20,38 +27,27 @@
 		<script src="js/ClassSchedule.js"></script>
 	</head>
 
-	<body min-width="600px">
+	<body>
 		<button id="sign_out" onclick="sign_out()">Sign Out</button><br><br>
 
 		<!-- Table for class options and placement -->
 		<table border="2" width="100%" bgcolor="#fefefe">
 			<tr>
 				<td style="width:40%">
-					<select id="SemesterDropdown">
-						
-					</select>
-					<br><br>
-					<select id="SchoolDropdown">
-
-					</select>
-					<br><br>
-					<select id="DepartmentDropdown">
-
-					</select>
-					<br><br>
-
-
-
+					<select id="SemesterDropdown"></select><br><br>
+					<select id="SchoolDropdown"></select><br><br>
+					<select id="DepartmentDropdown"></select><br><br>
 				</td>
-				<td rowspan="2" style="width:60%">
+				
+				<td rowspan="2" style="width:60%" >
+					<div id="div1" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
 					<!-- Area for class placement -->
-
 				</td>
 			</tr>
 			<tr>
 				<td>
 					<table id="course_listing">
-						<!-- Blank area for courses -->
+						<!-- Populated Courses -->
 					</table>
 				</td>
 

@@ -24,6 +24,9 @@
 		<script src="https://www.gstatic.com/firebasejs/4.9.1/firebase.js"></script>
 		<script src="https://www.gstatic.com/firebasejs/4.9.0/firebase-auth.js"></script>
 		<script src="https://www.gstatic.com/firebasejs/4.9.0/firebase-database.js"></script>
+		<script src="bower_components/jquery/dist/jquery.js"></script>
+		<script src="dist/cytoscape.js"></script>
+		<script src="cytoscape-snap-to-grid-master/cytoscape-snap-to-grid.js"></script>
 		<script src="js/ClassSchedule.js"></script>
 	</head>
 
@@ -33,22 +36,24 @@
 		<!-- Table for class options and placement -->
 		<table border="2" width="100%" bgcolor="#fefefe">
 			<tr>
-				<td style="width:40%">
+				<td style="width:30%">
 					<select id="SemesterDropdown"></select><br><br>
 					<select id="SchoolDropdown"></select><br><br>
 					<select id="DepartmentDropdown"></select><br><br>
 				</td>
 				
-				<td rowspan="2" style="width:60%" >
-					<div id="div1" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+				<td rowspan="2" style="width:70%" >
 					<!-- Area for class placement -->
+					<div id="cy"></div>
 				</td>
 			</tr>
 			<tr>
 				<td>
-					<table id="course_listing">
-						<!-- Populated Courses -->
-					</table>
+					<div class="scrollable">
+						<table id="course_listing">
+							<!-- Populated Courses -->
+						</table>
+					</div>
 				</td>
 
 			</tr>

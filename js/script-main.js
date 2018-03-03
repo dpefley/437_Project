@@ -44,15 +44,15 @@ init = function() {
 	    }
 	}
 
-	firebase.auth().onAuthStateChanged(firebaseUser => {
-		if (firebaseUser != null) {
-			console.log(firebaseUser);
-			//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
-		}
-		else {
-			console.log("not logged in");
-		}
-	});
+	// firebase.auth().onAuthStateChanged(firebaseUser => {
+	// 	if (firebaseUser != null) {
+	// 		console.log(firebaseUser);
+	// 		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+	// 	}
+	// 	else {
+	// 		console.log("not logged in");
+	// 	}
+	// });
 }
 
 function fetch_text (url) {
@@ -64,7 +64,9 @@ function create_user () {
 	//TODO: WE NEED TO CHECK FOR VALID EMAIL
 	var email = document.getElementById("user_email").value;
 	var password = document.getElementById("user_password").value;
-	firebase.auth().createUserWithEmailAndPassword(email, password)
+	firebase.auth().createUserWithEmailAndPassword(email, password).then(function(user) {
+		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+	})
 	.catch(function(error) {
 		//Handle Errors here
 		var errorCode = error.code;

@@ -167,3 +167,18 @@ div.scrollable {
     margin-top: 4px;
     margin-bottom: 4px;
 }
+
+h1 {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-family: "Helvetica";
+    font-style: normal;
+}
+
+h4 {
+    margin-top: 4px;
+    margin-bottom: 0px;
+    font-weight: normal;
+    font-family: "Helvetica";
+    font-style: normal;
+}

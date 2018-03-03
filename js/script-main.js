@@ -43,6 +43,16 @@ init = function() {
 	        modal.style.display = "none";
 	    }
 	}
+
+	firebase.auth().onAuthStateChanged(firebaseUser => {
+		if (firebaseUser != null) {
+			console.log(firebaseUser);
+			//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+		}
+		else {
+			console.log("not logged in");
+		}
+	});
 }
 
 function fetch_text (url) {
@@ -51,11 +61,11 @@ function fetch_text (url) {
 
 // New User Creation
 function create_user () {
+	//TODO: WE NEED TO CHECK FOR VALID EMAIL
 	var email = document.getElementById("user_email").value;
 	var password = document.getElementById("user_password").value;
-	firebase.auth().createUserWithEmailAndPassword(email, password).then(function() {
-		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
-	}).catch(function(error) {
+	firebase.auth().createUserWithEmailAndPassword(email, password)
+	.catch(function(error) {
 		//Handle Errors here
 		var errorCode = error.code;
 		var errorMessage = error.message; // Probably show this to user in some way
@@ -68,7 +78,7 @@ function create_user () {
 function sign_in () {
 	var email = document.getElementById("ret_user_email").value;
 	var password = document.getElementById("ret_user_password").value;
-	firebase.auth().signInWithEmailAndPassword(email, password).then(function() {
+	firebase.auth().signInWithEmailAndPassword(email, password).then(function(user) {
 		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
 	}).catch(function(error) {
 		//Handle Errors here

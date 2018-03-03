@@ -150,6 +150,9 @@
     width: 100%;
     height: 650px;
     float: right;
+    background-image: url("img/TrashIcon.png");
+    background-size: 40px;
+    background-repeat: no-repeat;
 }
 
 div.scrollable {
@@ -158,4 +161,9 @@ div.scrollable {
     margin: 0;
     padding: 0;
     overflow: auto;
+}
+
+.dropdownDiv {
+    margin-top: 4px;
+    margin-bottom: 4px;
 }

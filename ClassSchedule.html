@@ -26,7 +26,6 @@
 		<script src="https://www.gstatic.com/firebasejs/4.9.0/firebase-database.js"></script>
 		<script src="bower_components/jquery/dist/jquery.js"></script>
 		<script src="dist/cytoscape.js"></script>
-		<script src="cytoscape-snap-to-grid-master/cytoscape-snap-to-grid.js"></script>
 		<script src="js/ClassSchedule.js"></script>
 	</head>
 
@@ -37,12 +36,18 @@
 		<table border="2" width="100%" bgcolor="#fefefe">
 			<tr>
 				<td style="width:30%">
-					<select id="SemesterDropdown"></select><br><br>
-					<select id="SchoolDropdown"></select><br><br>
-					<select id="DepartmentDropdown"></select><br><br>
+					<div class="dropdownDiv">
+						<select id="SemesterDropdown"></select>
+					</div>
+					<div class="dropdownDiv">
+						<select id="SchoolDropdown"></select>
+					</div>
+					<div class="dropdownDiv">
+						<select id="DepartmentDropdown"></select>
+					</div>
 				</td>
 				
-				<td rowspan="2" style="width:70%" >
+				<td rowspan="2" style="width:70%" id="cy_cell" >
 					<!-- Area for class placement -->
 					<div id="cy"></div>
 				</td>

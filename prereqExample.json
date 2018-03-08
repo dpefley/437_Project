@@ -1,0 +1,19 @@
+{
+	"code" : "ExClass 001",
+	"department" : "TESTING(007)",
+	"description" : "Sample description",
+	"has_set_credits" : true,
+	"name" : "An Example for Prereqs",
+	"prerequisites" : {
+		"OR_1": {
+			"AND_1": [
+				"Class A",
+				"Class B"
+			],
+			"REQ_1": "Class C"
+		},
+		"TEXT_1": "This class requires you to be an Art major."
+	},
+	"school" : "Test",
+	"units" : 3
+}

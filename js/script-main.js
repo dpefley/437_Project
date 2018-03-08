@@ -65,7 +65,7 @@ function create_user () {
 	var email = document.getElementById("user_email").value;
 	var password = document.getElementById("user_password").value;
 	firebase.auth().createUserWithEmailAndPassword(email, password).then(function(user) {
-		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html?new_user=" + true;
 	})
 	.catch(function(error) {
 		//Handle Errors here

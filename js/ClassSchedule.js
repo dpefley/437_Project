@@ -21,6 +21,8 @@ var defaultEndSemester = "";
 var defaultSemesterCount = 0;
 var defaultIncludeSummer = true;
 
+var divisor = 75;
+
 var database;
 
 // Modal Window for Create Account
@@ -217,8 +219,8 @@ function handleDrop(e) {
 		                'padding-left': '8px',
 		                'padding-right': '8px',
 		                'height': 'label',
-		                'padding-top': '16px',
-		                'padding-bottom': '16px',
+		                'padding-top': '8px',
+		                'padding-bottom': '8px',
 		                'text-valign': "center"
 		            })
 		        .update()
@@ -246,31 +248,20 @@ function writeUserData(courseID, testXPos, testYPos) {
 }
 
 function computeYVal(yVal) {
-	//increments of 75
+	//use divisor starting at 75
+	var numOfSemesters = Math.round(575.0 / divisor);
+
 	var newYVal = 0;
-	if (yVal <= 112.5) {
-		newYVal = 75;
-	}
-	else if (yVal <= 187.5) {
-		newYVal = 150;
-	}
-	else if (yVal <= 262.5) {
-		newYVal = 225;
-	}
-	else if (yVal <= 337.5) {
-		newYVal = 300;
-	}
-	else if (yVal <= 412.5) {
-		newYVal = 375;
-	}
-	else if (yVal <= 487.5) {
-		newYVal = 450;
-	}
-	else if (yVal <= 562.5) {
-		newYVal = 525;
-	}
-	else { //if (yVal <= 637.5) 
-		newYVal = 600;
+	for (i = 1; i <= numOfSemesters; i++) {
+		if (yVal <= (650 + (divisor / 2)) - (divisor * i)) {
+			newYVal = 75 + (divisor * (numOfSemesters - i));
+		}
+		if (yVal > (650 - (divisor / 2))) {
+			newYVal = (650 - divisor);
+		}
+		if (yVal < 75) {
+			newYVal = 75;
+		}
 	}
 
 	return newYVal;
@@ -383,47 +374,138 @@ function first_time_user() {
 }
 
 function addSemesterRows() {
-	count = 1;
-	for (var semester in user_semesters) {
-		if (user_semesters.hasOwnProperty(semester)) {
-			var theId = "semester_" + count;
+	var includeSummerSemesters = true;
+	var startYear = 0;
+	var endYear = 0;
+	var startSemester = "";
+	var endSemester = "";
+	var userCourses = {};
+
+	var userData = database.ref('/Users').child("Default").once("value").then(function(snapshot) {
+		snapshot.forEach(function(childSnapshot) {
+			switch (childSnapshot.key) {
+				case "courses":
+					userCourses = childSnapshot.val();
+					break;
+				case "end_semester":
+					var end = childSnapshot.val().split(' ');
+					endSemester = end[0];
+					endYear = parseInt(end[1]);
+					break;
+				case "include_summer_semesters":
+					includeSummerSemesters = childSnapshot.val();
+					break;
+				case "start_semester":
+					var start = childSnapshot.val().split(' ');
+					startSemester = start[0];
+					startYear = parseInt(start[1]);
+					break;
+			}
+		});
+
+		var numOfSemesters = (endYear - startYear + 1) * (includeSummerSemesters ? 3 : 2);
+		var semesterIndex = 0;
+		switch (startSemester) {
+			case "Fall":
+				numOfSemesters -= includeSummerSemesters ? 2 : 1;
+				semesterIndex = includeSummerSemesters ? 2 : 1;
+				break;
+			case "Spring":
+				semesterIndex = 0;
+				break;
+			case "Summer":
+				numOfSemesters -= 1;
+				semesterIndex = 1;
+				break;
+		}
+		switch (endSemester) {
+			case "Fall":
+				break;
+			case "Spring":
+				numOfSemesters -= includeSummerSemesters ? 2 : 1;
+				break;
+			case "Summer":
+				numOfSemesters -= 1;
+				break;
+		}
+
+		divisor = 575.0 / numOfSemesters;
+		var semestersToLoopOver = includeSummerSemesters ? ["Spring", "Summer", "Fall"] : ["Spring", "Fall"];
+		var currentYear = startYear;
+		for (i = 0; i < numOfSemesters; i++) {
+			var theId = "semester_" + i;
 			cy.add({
 		        group: "nodes",
 		        data: {
 		            id: theId
 		        },
-		        position: { x: 75, y: (75 * count) }
+		        position: { x: 75, y: ((divisor * i) + 75) }
 		    });
 		    cy.$('#'+theId).ungrabify();
 		    cy.add({
 		    	group: "nodes",
 		    	data: {
-		    		id: count.toString()
+		    		id: i.toString()
 		    	},
-		    	position: { x: 2000, y: (75 * count) }
+		    	position: { x: 2000, y: ((divisor * i) + 75) }
 		    });
-		    cy.$('#'+count).ungrabify();
+		    cy.$('#'+i).ungrabify();
 
 		    cy.style()
 		        .selector(cy.getElementById(theId))
 		            .css({
-		                'label': user_semesters[semester]
+		                'label': (semestersToLoopOver[semesterIndex] + " " + currentYear)
 		            })
 		        .update()
 		    ;
 
-		    var theEdgeId = "semester_edge_" + count;
+		    var theEdgeId = "semester_edge_" + i;
 		    cy.add({
 		    	group: "edges",
 		    	data: {
 		    		id: theEdgeId,
-            		source: theId,
-            		target: count.toString()
+	        		source: theId,
+	        		target: i.toString()
 		    	}
 		    });
+
+		    semesterIndex = (semesterIndex + 1) % (includeSummerSemesters ? 3 : 2);
+		    if (semesterIndex == 0) {
+		    	currentYear++;
+		    }
 		}
-		count++;
-	}
+
+		//Add courses
+		console.log(userCourses);
+		for (course in userCourses) {
+			console.log(userCourses[course].x_pos);
+
+			cy.add({
+		        group: "nodes",
+		        data: {
+		            id: course
+		        },
+		        position: { x: userCourses[course].x_pos, y: userCourses[course].y_pos }
+		    });
+
+		    cy.style()
+		        .selector(cy.getElementById(course))
+		            .css({
+		                'label': course.replace('_', ' '),
+		                'shape': "roundrectangle",
+		                'background-color': "#AAA",
+		                'width': 'label',
+		                'padding-left': '8px',
+		                'padding-right': '8px',
+		                'height': 'label',
+		                'padding-top': '8px',
+		                'padding-bottom': '8px',
+		                'text-valign': "center"
+		            })
+		        .update()
+		    ;
+		}
+	});
 }
 
 function populateSchoolDropdown(schoolDropdown) {

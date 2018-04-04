@@ -21,7 +21,7 @@ var defaultEndSemester = "";
 var defaultSemesterCount = 0;
 var defaultIncludeSummer = true;
 
-var semesterAndYearArray = [];
+var semesterAndYearObj = {};
 
 var divisor = 75;
 
@@ -43,18 +43,16 @@ init = function() {
 
 	database = firebase.database();
 
-	alert(firebase.auth().currentUser.uid);
-
 	//Initialize Cytoscape
 	initializeCytoscape();
 
 	//Fill modal with html
-	var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
-	fetch_text(htmlPage).then((html) => {
-        document.getElementById("surround_modal_content").innerHTML = html;
-    }).catch((error) => {
-        console.warn(error);
-    });
+	// var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
+	// fetch_text(htmlPage).then((html) => {
+ //        document.getElementById("surround_modal_content").innerHTML = html;
+ //    }).catch((error) => {
+ //        console.warn(error);
+ //    });
 
     // Get the modal
 	var modal = document.getElementById('gettingStartedModal');
@@ -441,13 +439,10 @@ function addSemesterRows() {
 			var theId = "semester_" + i;
 			var semesterAndYearString = semestersToLoopOver[semesterIndex] + " " + currentYear;
 
-			var semesterAndYear = {
-				semesterAndYearString: {
-					y_pos: ((divisor * i) + 75)
-				}
-			};
+			var obj = {};
+			obj["y_pos"] = ((divisor * i) + 75);
 
-			semesterAndYearArray.push(semesterAndYear);
+			semesterAndYearObj[semesterAndYearString] = obj;
 
 			cy.add({
 		        group: "nodes",
@@ -492,36 +487,38 @@ function addSemesterRows() {
 
 		//Add courses
 		console.log(userCourses);
-		console.log(semesterAndYearArray);
+		console.log(semesterAndYearObj);
 		for (semester in userCourses) {
 			for (course in userCourses[semester]) {
-				var yPosition = semesterAndYearArray[semesterAndYearArray.indexOf(semester)].y_pos;
-				var xPosition = userCourses[semester][course].x_pos;
+				if (semester in semesterAndYearObj) {
+					var yPosition = semesterAndYearObj[semester].y_pos;
+					var xPosition = userCourses[semester][course].x_pos;
 
-				cy.add({
-			        group: "nodes",
-			        data: {
-			            id: course
-			        },
-			        position: { x: xPosition, y: yPosition }
-			    });
+					cy.add({
+				        group: "nodes",
+				        data: {
+				            id: course
+				        },
+				        position: { x: xPosition, y: yPosition }
+				    });
 
-			    cy.style()
-			        .selector(cy.getElementById(course))
-			            .css({
-			                'label': course.replace('_', ' '),
-			                'shape': "roundrectangle",
-			                'background-color': "#AAA",
-			                'width': 'label',
-			                'padding-left': '8px',
-			                'padding-right': '8px',
-			                'height': 'label',
-			                'padding-top': '8px',
-			                'padding-bottom': '8px',
-			                'text-valign': "center"
-			            })
-			        .update()
-			    ;
+				    cy.style()
+				        .selector(cy.getElementById(course))
+				            .css({
+				                'label': course.replace('_', ' '),
+				                'shape': "roundrectangle",
+				                'background-color': "#AAA",
+				                'width': 'label',
+				                'padding-left': '8px',
+				                'padding-right': '8px',
+				                'height': 'label',
+				                'padding-top': '8px',
+				                'padding-bottom': '8px',
+				                'text-valign': "center"
+				            })
+				        .update()
+				    ;
+				}
 			}
 		}
 	});

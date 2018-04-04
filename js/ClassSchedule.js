@@ -28,7 +28,7 @@ var database;
 // Modal Window for Create Account
 init = function() {
 
-	// Initialize Firebase
+	//Initialize Firebase
 	var config = {
 	    apiKey: "AIzaSyBJ1LF8ns8WLgNp_qOAby0FwrSGCYvU_iQ",
 	    authDomain: "washuplan.firebaseapp.com",
@@ -41,16 +41,18 @@ init = function() {
 
 	database = firebase.database();
 
+	alert(firebase.auth().currentUser.uid);
+
 	//Initialize Cytoscape
 	initializeCytoscape();
 
 	//Fill modal with html
-	// var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
-	// fetch_text(htmlPage).then((html) => {
- //        document.getElementById("surround_modal_content").innerHTML = html;
- //    }).catch((error) => {
- //        console.warn(error);
- //    });
+	var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
+	fetch_text(htmlPage).then((html) => {
+        document.getElementById("surround_modal_content").innerHTML = html;
+    }).catch((error) => {
+        console.warn(error);
+    });
 
     // Get the modal
 	var modal = document.getElementById('gettingStartedModal');
@@ -130,6 +132,7 @@ init = function() {
 	        }
 		}
     });
+
 }
 
 function fetch_text (url) {

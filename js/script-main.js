@@ -65,7 +65,12 @@ function create_user () {
 	var email = document.getElementById("user_email").value;
 	var password = document.getElementById("user_password").value;
 	firebase.auth().createUserWithEmailAndPassword(email, password).then(function(user) {
-		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html?new_user=" + true;
+		firebase.auth().onAuthStateChanged(user => {
+		if (user) {
+			window.location = "ClassSchedule.html";
+		}
+	});
+		//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html?new_user=" + true;
 	})
 	.catch(function(error) {
 		//Handle Errors here
@@ -80,14 +85,24 @@ function create_user () {
 function sign_in () {
 	var email = document.getElementById("ret_user_email").value;
 	var password = document.getElementById("ret_user_password").value;
-	firebase.auth().signInWithEmailAndPassword(email, password).then(function(user) {
-		window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html";
+
+	firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION).then(function() {
+    // Existing and future Auth states are now persisted in the current
+    // session only. Closing the window would clear any existing state even
+    // if a user forgets to sign out.
+    // ...
+    // New sign-in will be persisted with session persistence.
+    	firebase.auth().signInWithEmailAndPassword(email, password).then(function(user) {
+    		firebase.auth().onAuthStateChanged(user => {
+    			if (user) {
+					window.location = "ClassSchedule.html";
+				}
+			});
+    	});
 	}).catch(function(error) {
-		//Handle Errors here
-		var errorCode = error.code;
-		var errorMessage = error.message; // Probably show this to user in some way
-		alert(errorMessage);
-		//alert(errorCode);
+    // Handle Errors here.
+    	var errorCode = error.code;
+    	var errorMessage = error.message;
 	});
 }
 

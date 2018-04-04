@@ -30,7 +30,7 @@ var database;
 // Modal Window for Create Account
 init = function() {
 
-	// Initialize Firebase
+	//Initialize Firebase
 	var config = {
 	    apiKey: "AIzaSyBJ1LF8ns8WLgNp_qOAby0FwrSGCYvU_iQ",
 	    authDomain: "washuplan.firebaseapp.com",
@@ -42,6 +42,8 @@ init = function() {
 	firebase.initializeApp(config);
 
 	database = firebase.database();
+
+	alert(firebase.auth().currentUser.uid);
 
 	//Initialize Cytoscape
 	initializeCytoscape();
@@ -132,6 +134,7 @@ init = function() {
 	        }
 		}
     });
+
 }
 
 function fetch_text (url) {

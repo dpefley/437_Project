@@ -26,6 +26,9 @@ var semesterAndYearObj = {};
 var divisor = 75;
 
 var database;
+var user;
+var numOfSemesters;
+var include_summer = defaultIncludeSummer;
 
 // Modal Window for Create Account
 init = function() {
@@ -41,98 +44,138 @@ init = function() {
 	};
 	firebase.initializeApp(config);
 
-	database = firebase.database();
+	firebase.auth().onAuthStateChanged(function(user) {
+		if (user) {
+			database = firebase.database();
+			var userID = firebase.auth().currentUser.uid;
+			database.ref('/Users/' + userID).once("value").then(function(snapshot) {
+				var first = true;
+				snapshot.forEach(function(childSnapshot) {
+					if (childSnapshot.key == "isNewUser") {
+						if (childSnapshot.val() == true) {
+							var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
+							fetch_text(htmlPage).then((html) => {
+								document.getElementById("surround_modal_content").innerHTML = html;
+							}).then(function() {
+				    	var modal = document.getElementById('gettingStartedModal');
+						modal.style.display = "block";
+		    			populateModalSemesterDropdowns();
 
-	//Initialize Cytoscape
-	initializeCytoscape();
+		    			document.getElementById('submit_semester_data').addEventListener('click', function() {
+					    	var selectedStart = document.getElementById('starting_semesters').value;
+					    	var selectedEnd = document.getElementById('ending_semesters').value;
+					    	var includeSummerSemestersCheck = document.getElementById('include_summer').checked;
+					    	
+					    	writeUserInformationOnly(selectedStart, selectedEnd, includeSummerSemestersCheck);
 
-	//Fill modal with html
-	// var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
-	// fetch_text(htmlPage).then((html) => {
- //        document.getElementById("surround_modal_content").innerHTML = html;
- //    }).catch((error) => {
- //        console.warn(error);
- //    });
+					    });
+				    }).catch((error) => {
+								console.warn(error);
+							});
 
-    // Get the modal
-	var modal = document.getElementById('gettingStartedModal');
+						}
+						else {
+							//Initialize Cytoscape
+							initializeCytoscape();
 
-	// Get the button that opens the modal
-	var btn = document.getElementById("modal_test");
+						    // Get the modal
+							// var modal = document.getElementById('gettingStartedModal');
 
-	// When the user clicks on the button, open the modal 
-	btn.onclick = function() {
-	    modal.style.display = "block";
-	    populateModalSemesterDropdowns();
-	}
+							// // Get the button that opens the modal
+							// var btn = document.getElementById("modal_test");
 
-	// When the user clicks anywhere outside of the modal, close it
-	// This will eventually be unwanted
-	window.onclick = function(event) {
-	    if (event.target == modal) {
-	        modal.style.display = "none";
-	    }
-	}
+							// // When the user clicks on the button, open the modal 
+							// btn.onclick = function() {
+							//     modal.style.display = "block";
+							//     populateModalSemesterDropdowns();
+							// }
+
+							// // When the user clicks anywhere outside of the modal, close it
+							// // This will eventually be unwanted
+							// window.onclick = function(event) {
+							//     if (event.target == modal) {
+							//         modal.style.display = "none";
+							//     }
+							// }
+							
+							var schoolDropdown = document.getElementById("SchoolDropdown");
+							var departmentDropdown = document.getElementById("DepartmentDropdown");
+							var searchTextInput = document.getElementById("SearchText");
+							var courseTable = document.getElementById("course_listing");
+
+							populateSchoolDropdown(schoolDropdown);
+
+							schoolDropdown.addEventListener("change", function() {
+								emptyTable();
+								populateDepartmentDropdown(departmentDropdown, schoolDropdown.value);
+								departmentDropdown.style.display = "block";
+							});
+
+							departmentDropdown.addEventListener("change", function() {
+								chosenDepartment = departmentDropdown.value;
+								emptyTable();
+								if (departmentDropdown.value != "Select Department") {
+									populateCourseTable();
+								}
+							});
+
+							var cyDiv = document.getElementById("cy");
+							cyDiv.addEventListener("dragover", function(event) {
+								event.preventDefault();
+							});
+							cyDiv.addEventListener("drop", function(event) {
+								event.preventDefault();
+								handleDrop(event);
+							});
+
+							cy.on("tap", "node", function(event) {
+								console.log(event.target._private.data.id);
+								//Here's where we will open up the modal with more information on the class
+							});
+
+							// This will need a huge update to check what semesters the course is available
+							cy.on("free", "node", function(event) {
+								var nodeId = event.target._private.data.id;
+								if (event.target._private.position.x < 50 && event.target._private.position.y < 50) {
+									cy.remove(cy.getElementById(nodeId));
+									coursesAddedToSchedule.splice(coursesAddedToSchedule.indexOf(nodeId), 1);
+									coursesToBeStored.splice(coursesToBeStored.indexOf(nodeId), 1);
+								}
+								else {
+									var newXVal = computeXVal(event.target._private.position.x);
+									var newYVal = computeYVal(event.target._private.position.y);
+									cy.$('#'+nodeId).position('x', newXVal);
+									cy.$('#'+nodeId).position('y', newYVal);
+
+									for (var storedCourses in coursesToBeStored) {
+										if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
+											coursesToBeStored[storedCourses].xPos = newXVal;
+											coursesToBeStored[storedCourses].yPos = newYVal;
+
+											var courseSemester;
+											for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+												if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
+													courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
+												}
+											}
+											var courseID = courseDragged.getAttribute("id");
+											var x_pos = newXVal;
+											var start = cy.getElementById('semester_0')._private.style.label.value;
+											var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
+											writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+										}
+									}
+								}
+							});
+						}
+					}
+				});
+			});
+		}
+		
+	});
+
 	
-	var schoolDropdown = document.getElementById("SchoolDropdown");
-	var departmentDropdown = document.getElementById("DepartmentDropdown");
-	var searchTextInput = document.getElementById("SearchText");
-	var courseTable = document.getElementById("course_listing");
-
-	populateSchoolDropdown(schoolDropdown);
-
-	schoolDropdown.addEventListener("change", function() {
-		emptyTable();
-		populateDepartmentDropdown(departmentDropdown, schoolDropdown.value);
-		departmentDropdown.style.display = "block";
-	});
-
-	departmentDropdown.addEventListener("change", function() {
-		chosenDepartment = departmentDropdown.value;
-		emptyTable();
-		if (departmentDropdown.value != "Select Department") {
-			populateCourseTable();
-		}
-	});
-
-	var cyDiv = document.getElementById("cy");
-	cyDiv.addEventListener("dragover", function(event) {
-		event.preventDefault();
-	});
-	cyDiv.addEventListener("drop", function(event) {
-		event.preventDefault();
-		handleDrop(event);
-	});
-
-	cy.on("tap", "node", function(event) {
-		console.log(event.target._private.data.id);
-		//Here's where we will open up the modal with more information on the class
-	});
-
-	// This will need a huge update to check what semesters the course is available
-	cy.on("free", "node", function(event) {
-		var nodeId = event.target._private.data.id;
-		if (event.target._private.position.x < 50 && event.target._private.position.y < 50) {
-			cy.remove(cy.getElementById(nodeId));
-			coursesAddedToSchedule.splice(coursesAddedToSchedule.indexOf(nodeId), 1);
-			coursesToBeStored.splice(coursesToBeStored.indexOf(nodeId), 1);
-		}
-		else {
-			var newXVal = computeXVal(event.target._private.position.x);
-	        var newYVal = computeYVal(event.target._private.position.y);
-	        cy.$('#'+nodeId).position('x', newXVal);
-	        cy.$('#'+nodeId).position('y', newYVal);
-
-	        for (var storedCourses in coursesToBeStored) {
-	        	if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
-	        		coursesToBeStored[storedCourses].xPos = newXVal;
-	        		coursesToBeStored[storedCourses].yPos = newYVal;
-	        		writeUserData(courseDragged.getAttribute("id"), newXVal, newYVal);
-	        	}
-	        }
-		}
-    });
-
 }
 
 function fetch_text (url) {
@@ -140,40 +183,40 @@ function fetch_text (url) {
 }
 
 function populateModalSemesterDropdowns() {
-	var startingSemesters = [];
-	var endingSemesters = [];
+	var startingSemesters = ["Fall 2018"];
+	var endingSemesters = ["Spring 2022"];
 
-	var fallText = "Fall ";
-	var springText = "Spring ";
-	var summerText = "Summer ";
+	// var fallText = "Fall ";
+	// var springText = "Spring ";
+	// var summerText = "Summer ";
 
-	var todaysDate = new Date();
-	var thisYear = todaysDate.getFullYear();
+	// var todaysDate = new Date();
+	// var thisYear = todaysDate.getFullYear();
 
-	for(var i = 0; i < 8; i++) {
-		var year = thisYear - i;
-		var fallSemesterText = fallText + year;
-		startingSemesters.push(fallSemesterText);
+	// for(var i = 0; i < 8; i++) {
+	// 	var year = thisYear - i;
+	// 	var fallSemesterText = fallText + year;
+	// 	startingSemesters.push(fallSemesterText);
 
-		var summerSemesterText = summerText + year;
-		startingSemesters.push(summerSemesterText);
+	// 	var summerSemesterText = summerText + year;
+	// 	startingSemesters.push(summerSemesterText);
 
-		var springSemesterText = springText + year;
-		startingSemesters.push(springSemesterText);
-	}
+	// 	var springSemesterText = springText + year;
+	// 	startingSemesters.push(springSemesterText);
+	// }
 	createOptionsForStartingEndingSemesterDropdowns(startingSemesters, "starting_semesters");
 
-	for(var i = 0; i < 12; i++) {
-		var year = thisYear - i + 8;
-		var fallSemesterText = fallText + year;
-		endingSemesters.push(fallSemesterText);
+	// for(var i = 0; i < 12; i++) {
+	// 	var year = thisYear - i + 8;
+	// 	var fallSemesterText = fallText + year;
+	// 	endingSemesters.push(fallSemesterText);
 
-		var summerSemesterText = summerText + year;
-		endingSemesters.push(summerSemesterText);
+	// 	var summerSemesterText = summerText + year;
+	// 	endingSemesters.push(summerSemesterText);
 
-		var springSemesterText = springText + year;
-		endingSemesters.push(springSemesterText);
-	}
+	// 	var springSemesterText = springText + year;
+	// 	endingSemesters.push(springSemesterText);
+	// }
 	createOptionsForStartingEndingSemesterDropdowns(endingSemesters, "ending_semesters");
 }
 
@@ -236,23 +279,54 @@ function handleDrop(e) {
 		    	"xPos":xVal,
 		    	"yPos":yVal
 		    };
-		    coursesToBeAdded.push(courseToAdd);
-		    writeUserData(courseDragged.getAttribute("id"), xVal, yVal);
+		    coursesToBeStored.push(courseToAdd);
+		    //Write Courses
+		    for (var storedCourses in coursesToBeStored) {
+	        	if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
+	        		var yPos = coursesToBeStored[storedCourses].yPos;
+
+	        		var courseSemester;
+	        		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+	        			if (yPos == cy.getElementById('semester_' + semesters)._private.position.y) {
+	        				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
+	        			}
+	        		}
+	        		var courseID = courseDragged.getAttribute("id");
+	        		var x_pos = coursesToBeStored[storedCourses].xPos;
+	        		var start = cy.getElementById('semester_0')._private.style.label.value;
+	        		var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
+	        		writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+	        	}
+	        }
 		}
 	}
 }
 
-function writeUserData(courseID, testXPos, testYPos) {
+function writeUserData(courseSemester, courseID, x_pos, start, end, include_summer) {
+	var userID = firebase.auth().currentUser.uid;
 	database = firebase.database();
-	database.ref('Users/Default/courses/' + courseID).set({
-		x_pos: testXPos,
-		y_pos: testYPos
+	database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).set({
+		x_pos: x_pos
+	});
+	writeUserInformationOnly(start, end, include_summer);
+}
+
+function writeUserInformationOnly(start, end, include_summer) {
+	var userID = firebase.auth().currentUser.uid;
+	database = firebase.database();
+	database.ref('Users/' + userID).update({
+		start_semester: start,
+		end_semester: end,
+		include_summer_semesters: include_summer,
+		isNewUser: false
+	}).then(function() {
+		location.reload();
 	});
 }
 
 function computeYVal(yVal) {
 	//use divisor starting at 75
-	var numOfSemesters = Math.round(575.0 / divisor);
+	//numOfSemesters = Math.round(575.0 / divisor);
 
 	var newYVal = 0;
 	for (i = 1; i <= numOfSemesters; i++) {
@@ -384,7 +458,9 @@ function addSemesterRows() {
 	var endSemester = "";
 	var userCourses = {};
 
-	var userData = database.ref('/Users').child("Default").once("value").then(function(snapshot) {
+	var userID = firebase.auth().currentUser.uid;
+
+	var userData = database.ref('/Users/' + userID).once("value").then(function(snapshot) {
 		snapshot.forEach(function(childSnapshot) {
 			switch (childSnapshot.key) {
 				case "courses":
@@ -406,7 +482,7 @@ function addSemesterRows() {
 			}
 		});
 
-		var numOfSemesters = (endYear - startYear + 1) * (includeSummerSemesters ? 3 : 2);
+		numOfSemesters = (endYear - startYear + 1) * (includeSummerSemesters ? 3 : 2);
 		var semesterIndex = 0;
 		switch (startSemester) {
 			case "Fall":

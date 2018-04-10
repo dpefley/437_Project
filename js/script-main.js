@@ -1,3 +1,5 @@
+var database;
+
 // Modal Window for Create Account
 init = function() {
 // Initialize Firebase
@@ -66,10 +68,15 @@ function create_user () {
 	var password = document.getElementById("user_password").value;
 	firebase.auth().createUserWithEmailAndPassword(email, password).then(function(user) {
 		firebase.auth().onAuthStateChanged(user => {
-		if (user) {
-			window.location = "ClassSchedule.html";
-		}
-	});
+			if (user) {
+				database = firebase.database();
+				database.ref('Users/' + user.uid).set({
+					isNewUser: true
+				}).then(function() {
+					window.location = "ClassSchedule.html";
+				});
+			}
+		});
 		//window.location = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/ClassSchedule.html?new_user=" + true;
 	})
 	.catch(function(error) {

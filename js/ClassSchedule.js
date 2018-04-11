@@ -713,6 +713,10 @@ function populateCourseTable(selectedSchool2, selectedDepartment2) {
 	});
 }
 
+function direct_to_settings() {
+	window.location = "AccountSettings.html";
+}
+
 // User Sign Out
 function sign_out () {
 	firebase.auth().signOut().then(function() {

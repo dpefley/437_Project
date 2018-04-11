@@ -30,6 +30,8 @@ var user;
 var numOfSemesters;
 var include_summer = defaultIncludeSummer;
 
+var courseSemester;
+
 // Modal Window for Create Account
 init = function() {
 
@@ -78,26 +80,6 @@ init = function() {
 							//Initialize Cytoscape
 							initializeCytoscape();
 
-						    // Get the modal
-							// var modal = document.getElementById('gettingStartedModal');
-
-							// // Get the button that opens the modal
-							// var btn = document.getElementById("modal_test");
-
-							// // When the user clicks on the button, open the modal 
-							// btn.onclick = function() {
-							//     modal.style.display = "block";
-							//     populateModalSemesterDropdowns();
-							// }
-
-							// // When the user clicks anywhere outside of the modal, close it
-							// // This will eventually be unwanted
-							// window.onclick = function(event) {
-							//     if (event.target == modal) {
-							//         modal.style.display = "none";
-							//     }
-							// }
-							
 							var schoolDropdown = document.getElementById("SchoolDropdown");
 							var departmentDropdown = document.getElementById("DepartmentDropdown");
 							var searchTextInput = document.getElementById("SearchText");
@@ -130,10 +112,11 @@ init = function() {
 
 							cy.on("tap", "node", function(event) {
 								console.log(event.target._private.data.id);
-								//Here's where we will open up the modal with more information on the class
+														//Here's where we will open up the modal with more information on the class
 							});
 
-							// This will need a huge update to check what semesters the course is available
+													// This will need a huge update to check what semesters the course is available
+							
 							cy.on("free", "node", function(event) {
 								var nodeId = event.target._private.data.id;
 								if (event.target._private.position.x < 50 && event.target._private.position.y < 50) {
@@ -147,35 +130,50 @@ init = function() {
 									cy.$('#'+nodeId).position('x', newXVal);
 									cy.$('#'+nodeId).position('y', newYVal);
 
-									for (var storedCourses in coursesToBeStored) {
-										if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
-											coursesToBeStored[storedCourses].xPos = newXVal;
-											coursesToBeStored[storedCourses].yPos = newYVal;
+									//for (var storedCourses in coursesToBeStored) {
+									//console.log("gets in here");
+									// if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
+									// 	coursesToBeStored[storedCourses].xPos = newXVal;
+									// 	coursesToBeStored[storedCourses].yPos = newYVal;
 
-											var courseSemester;
-											for (var semesters = 0; semesters < numOfSemesters; semesters++) {
-												if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
-													courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
-												}
-											}
-											var courseID = courseDragged.getAttribute("id");
-											var x_pos = newXVal;
-											var start = cy.getElementById('semester_0')._private.style.label.value;
-											var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
-											writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+									
+									for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+										if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
+											courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
 										}
 									}
+									var courseID = courseDragged;
+									var x_pos = newXVal;
+									var start = cy.getElementById('semester_0')._private.style.label.value;
+									var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
+									writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+							
 								}
+							});
+
+							cy.on("grab", "node", function(event) {
+								var newXVal = computeXVal(event.target._private.position.x);
+								var newYVal = computeYVal(event.target._private.position.y);
+
+								courseDragged = event.target[0]._private.data.id;
+								cy.$('#'+courseDragged).position('x', newXVal);
+								cy.$('#'+courseDragged).position('y', newYVal);
+
+								
+								for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+									if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
+										courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
+									}
+								}
+								var toRemove = courseDragged.replace(' ', '_');
+								deleteUserData(courseSemester, toRemove);
 							});
 						}
 					}
 				});
 			});
 		}
-		
 	});
-
-	
 }
 
 function fetch_text (url) {
@@ -234,7 +232,7 @@ function handleDrop(e) {
 	var hasClass = false;
 	if (coursesAddedToSchedule.length > 0) {
 		for (var course in coursesAddedToSchedule) {
-			if (coursesAddedToSchedule[course] == courseDragged.getAttribute("id")) {
+			if (coursesAddedToSchedule[course] == courseDragged) {
 				hasClass = true;
 			}
 		}
@@ -250,15 +248,15 @@ function handleDrop(e) {
 			cy.add({
 		        group: "nodes",
 		        data: {
-		            id: courseDragged.getAttribute("id")
+		            id: courseDragged
 		        },
 		        position: { x: xVal, y: yVal }
 		    });
 
 		    cy.style()
-		        .selector(cy.getElementById(courseDragged.getAttribute("id")))
+		        .selector(cy.getElementById(courseDragged))
 		            .css({
-		                'label': courseDragged.childNodes[0].childNodes[1].childNodes[0].data.trim(),
+		                'label': courseDragged.replace('_', ' '),
 		                'shape': "roundrectangle",
 		                'background-color': "#AAA",
 		                'width': 'label',
@@ -272,32 +270,31 @@ function handleDrop(e) {
 		        .update()
 		    ;
 
-		    coursesAddedToSchedule.push(courseDragged.getAttribute("id"));
+		    coursesAddedToSchedule.push(courseDragged);
 
 		    var courseToAdd = {
-		    	"id":courseDragged.getAttribute("id"),
+		    	"id":courseDragged,
 		    	"xPos":xVal,
 		    	"yPos":yVal
 		    };
 		    coursesToBeStored.push(courseToAdd);
 		    //Write Courses
-		    for (var storedCourses in coursesToBeStored) {
-	        	if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
-	        		var yPos = coursesToBeStored[storedCourses].yPos;
+		    //for (var storedCourses in coursesToBeStored) {
+	        	//if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
+	        		//var yPos = coursesToBeStored[storedCourses].yPos;
 
-	        		var courseSemester;
-	        		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
-	        			if (yPos == cy.getElementById('semester_' + semesters)._private.position.y) {
-	        				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
-	        			}
-	        		}
-	        		var courseID = courseDragged.getAttribute("id");
-	        		var x_pos = coursesToBeStored[storedCourses].xPos;
-	        		var start = cy.getElementById('semester_0')._private.style.label.value;
-	        		var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
-	        		writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
-	        	}
-	        }
+    		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+    			if (yVal == cy.getElementById('semester_' + semesters)._private.position.y) {
+    				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
+    			}
+    		}
+    		var courseID = courseDragged;
+    		var x_pos = xVal;
+    		var start = cy.getElementById('semester_0')._private.style.label.value;
+    		var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
+    		writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+	        	//}
+	        //}
 		}
 	}
 }
@@ -308,7 +305,7 @@ function writeUserData(courseSemester, courseID, x_pos, start, end, include_summ
 	database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).set({
 		x_pos: x_pos
 	});
-	writeUserInformationOnly(start, end, include_summer);
+	//writeUserInformationOnly(start, end, include_summer);
 }
 
 function writeUserInformationOnly(start, end, include_summer) {
@@ -322,6 +319,12 @@ function writeUserInformationOnly(start, end, include_summer) {
 	}).then(function() {
 		location.reload();
 	});
+}
+
+function deleteUserData(courseSemester, courseID) {
+	var userID = firebase.auth().currentUser.uid;
+	database = firebase.database();
+	database.ref('Users/' + userID + '/courses/' + courseSemester + '/').child(courseID).remove();
 }
 
 function computeYVal(yVal) {
@@ -361,8 +364,7 @@ function computeXVal(xVal) {
 }
 
 function drag(ev) {
-	courseDragged = ev.path[0];
-	//console.log(courseDragged.childNodes[0].childNodes[1].childNodes[0].data.trim());
+	courseDragged = ev.path[0].childNodes[0].childNodes[1].childNodes[0].data.trim().replace(' ', '_');
 }
 
 function initializeCytoscape() {
@@ -562,8 +564,8 @@ function addSemesterRows() {
 		}
 
 		//Add courses
-		console.log(userCourses);
-		console.log(semesterAndYearObj);
+		//console.log(userCourses);
+		//console.log(semesterAndYearObj);
 		for (semester in userCourses) {
 			for (course in userCourses[semester]) {
 				if (semester in semesterAndYearObj) {

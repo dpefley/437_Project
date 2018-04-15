@@ -129,13 +129,6 @@ init = function() {
 									var newYVal = computeYVal(event.target._private.position.y);
 									cy.$('#'+nodeId).position('x', newXVal);
 									cy.$('#'+nodeId).position('y', newYVal);
-
-									//for (var storedCourses in coursesToBeStored) {
-									//console.log("gets in here");
-									// if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
-									// 	coursesToBeStored[storedCourses].xPos = newXVal;
-									// 	coursesToBeStored[storedCourses].yPos = newYVal;
-
 									
 									for (var semesters = 0; semesters < numOfSemesters; semesters++) {
 										if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
@@ -172,6 +165,9 @@ init = function() {
 					}
 				});
 			});
+		}
+		else {
+			window.location = "WashUPlan.html";
 		}
 	});
 }

@@ -25,10 +25,14 @@ var semesterAndYearObj = {};
 
 var divisor = 75;
 
+var semestersToKeep;
+
 var database;
 var user;
 var numOfSemesters;
 var include_summer = defaultIncludeSummer;
+var dragSelectedSchool;
+var dragSelectedDepartment;
 
 var courseSemester;
 
@@ -118,6 +122,7 @@ init = function() {
 													// This will need a huge update to check what semesters the course is available
 							
 							cy.on("free", "node", function(event) {
+								resetToDefaultColoring();
 								var nodeId = event.target._private.data.id;
 								if (event.target._private.position.x < 50 && event.target._private.position.y < 50) {
 									cy.remove(cy.getElementById(nodeId));
@@ -125,6 +130,27 @@ init = function() {
 									coursesToBeStored.splice(coursesToBeStored.indexOf(nodeId), 1);
 								}
 								else {
+									var uid = firebase.auth().currentUser.uid;
+									semestersToKeep = database.ref('Users/' + uid + '/courses').once('value').then(function(userCoursesSnapshot) {
+										userCoursesSnapshot.forEach(function(snapshotForSemester) {
+											snapshotForSemester.forEach(function(snapshotCourseList) {
+												var schoolString = "";
+												var departmentString = "";
+												if (snapshotCourseList.key == nodeId) {
+													snapshotCourseList.forEach(function(propertySnapshot) {
+														if (propertySnapshot.key == "school") {
+															schoolString = propertySnapshot.val();
+														}
+														else if (propertySnapshot.key == "department") {
+															departmentString = propertySnapshot.val();
+														}
+													});
+
+													return checkValidSemesters(nodeId, schoolString, departmentString, false);
+												}
+											});
+										});
+									});
 									var newXVal = computeXVal(event.target._private.position.x);
 									var newYVal = computeYVal(event.target._private.position.y);
 									cy.$('#'+nodeId).position('x', newXVal);
@@ -139,12 +165,35 @@ init = function() {
 									var x_pos = newXVal;
 									var start = cy.getElementById('semester_0')._private.style.label.value;
 									var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
-									writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+									writeUserData(courseSemester, courseID, x_pos, start, end, include_summer, false);	        			
 							
 								}
 							});
 
 							cy.on("grab", "node", function(event) {
+
+								var uid = firebase.auth().currentUser.uid;
+								semestersToKeep = database.ref('Users/' + uid + '/courses').once('value').then(function(userCoursesSnapshot) {
+									userCoursesSnapshot.forEach(function(snapshotForSemester) {
+										snapshotForSemester.forEach(function(snapshotCourseList) {
+											var schoolString = "";
+											var departmentString = "";
+											if (snapshotCourseList.key == nodeId) {
+												snapshotCourseList.forEach(function(propertySnapshot) {
+													if (propertySnapshot.key == "school") {
+														schoolString = propertySnapshot.val();
+													}
+													else if (propertySnapshot.key == "department") {
+														departmentString = propertySnapshot.val();
+													}
+												});
+
+												return checkValidSemesters(nodeId, schoolString, departmentString, true);
+											}
+										});
+									});
+								});
+
 								var newXVal = computeXVal(event.target._private.position.x);
 								var newYVal = computeYVal(event.target._private.position.y);
 
@@ -152,14 +201,31 @@ init = function() {
 								cy.$('#'+courseDragged).position('x', newXVal);
 								cy.$('#'+courseDragged).position('y', newYVal);
 
-								
 								for (var semesters = 0; semesters < numOfSemesters; semesters++) {
 									if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
 										courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
 									}
 								}
 								var toRemove = courseDragged.replace(' ', '_');
-								deleteUserData(courseSemester, toRemove);
+								var userID = firebase.auth().currentUser.uid;
+
+								var userData = database.ref('/Users/' + userID + '/courses/' + courseSemester + '/' + toRemove).once("value").then(function(snapshot) {
+									snapshot.forEach(function(childSnapshot) {
+										switch (childSnapshot.key) {
+											case "school":
+												dragSelectedSchool = childSnapshot.val();
+												console.log(dragSelectedSchool);
+												break;
+											case "department":
+												dragSelectedDepartment = childSnapshot.val();
+												console.log(dragSelectedDepartment);
+												break;
+										}
+									});
+								}).then(function() {
+									deleteUserData(courseSemester, toRemove);
+								});
+								
 							});
 						}
 					}
@@ -225,6 +291,7 @@ function createOptionsForStartingEndingSemesterDropdowns(semesterArray, dropdown
 }
 
 function handleDrop(e) {
+	resetToDefaultColoring();
 	var hasClass = false;
 	if (coursesAddedToSchedule.length > 0) {
 		for (var course in coursesAddedToSchedule) {
@@ -279,7 +346,11 @@ function handleDrop(e) {
 	        	//if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
 	        		//var yPos = coursesToBeStored[storedCourses].yPos;
 
+	        console.log(e.layerY);
+	        console.log(yVal);
     		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+    			console.log(cy.getElementById('semester_' + semesters)._private.position.y);
+    			console.log('semester_' + semesters);
     			if (yVal == cy.getElementById('semester_' + semesters)._private.position.y) {
     				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
     			}
@@ -288,20 +359,124 @@ function handleDrop(e) {
     		var x_pos = xVal;
     		var start = cy.getElementById('semester_0')._private.style.label.value;
     		var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
-    		writeUserData(courseSemester, courseID, x_pos, start, end, include_summer);	        			
+    		writeUserData(courseSemester, courseID, x_pos, start, end, include_summer, true);	        			
 	        	//}
 	        //}
 		}
 	}
+	checkForPrerequisites(courseID);
 }
 
-function writeUserData(courseSemester, courseID, x_pos, start, end, include_summer) {
+function checkValidSemesters(courseID, school, department, highlightRows) {
+	database.ref('Schools/' + school + '/Departments/' + department + '/Courses/' + courseID).once('value').then(function(snapshot) {
+		snapshot.forEach(function(yearSnapshot) {
+			if (yearSnapshot.key == "years") {
+				var semesters = [];
+				yearSnapshot.forEach(function(semesterSnapshot) {
+					var semestersAvailableForYear = semesterSnapshot.val();
+					for (var i = 0; i < semestersAvailableForYear.length; i++) {
+						console.log(semestersAvailableForYear.length);
+						var semesterString = semestersAvailableForYear[i] + " " + semesterSnapshot.key;
+						console.log(semesterString);
+						semesters.push(semesterString);
+					}
+				});
+				semestersToKeep = semesters;
+			}
+		});
+	}).then(function() {
+		if (highlightRows) {
+			highlightValidSemestersToPlaceCourse(semestersToKeep);
+		}
+	})
+}
+
+function highlightValidSemestersToPlaceCourse() {
+	var indexesToHighlight = [];
+
+	var count = 0;
+	for (semester in semesterAndYearObj) {
+		if (semestersToKeep.indexOf(semester) != -1) {
+			indexesToHighlight.push(count);
+		}
+		count++;
+	}
+
+	for (i = 0; i < indexesToHighlight.length; i++) {
+		var semesterString = "semester_" + indexesToHighlight[i];
+
+		cy.style()
+	        .selector(cy.getElementById(semesterString))
+	            .css({
+	                'line-color': 'blue'
+	            })
+	        .update()
+	    ;
+	}
+}
+
+function resetToDefaultColoring() {
+	var count = 0;
+	for (semester in semesterAndYearObj) {
+		count++;
+	}
+
+	for (i = 0; i < count; i++) {
+		var semesterString = "semester_" + i;
+
+		cy.style()
+	        .selector(cy.getElementById(semesterString))
+	            .css({
+	                'line-color': '#989898'
+	            })
+	        .update()
+	    ;
+	}
+}
+
+function checkForPrerequisites(courseID) {
+	database.ref('Schools/' + selectedSchool + '/Departments/' + selectedDepartment + '/Courses/' + courseID).once('value').then(function(snapshot) {
+		snapshot.forEach(function(childSnapshot) {
+			switch (childSnapshot.key) {
+				case "courses":
+					userCourses = childSnapshot.val();
+					break;
+				case "end_semester":
+					var end = childSnapshot.val().split(' ');
+					endSemester = end[0];
+					endYear = parseInt(end[1]);
+					break;
+				case "include_summer_semesters":
+					includeSummerSemesters = childSnapshot.val();
+					break;
+				case "start_semester":
+					var start = childSnapshot.val().split(' ');
+					startSemester = start[0];
+					startYear = parseInt(start[1]);
+					break;
+			}
+		});
+	});
+}
+
+function writeUserData(courseSemester, courseID, x_pos, start, end, include_summer, new_course) {
 	var userID = firebase.auth().currentUser.uid;
 	database = firebase.database();
-	database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).set({
-		x_pos: x_pos
-	});
-	//writeUserInformationOnly(start, end, include_summer);
+
+	if (new_course) {
+		database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).set({
+			x_pos: x_pos,
+			department: selectedDepartment,
+			school: selectedSchool
+		});
+	}
+	else {
+		database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).update({
+			x_pos: x_pos,
+			department: dragSelectedDepartment,
+			school: dragSelectedSchool
+		});
+	}
 }
 
 function writeUserInformationOnly(start, end, include_summer) {
@@ -327,16 +502,28 @@ function computeYVal(yVal) {
 	//use divisor starting at 75
 	//numOfSemesters = Math.round(575.0 / divisor);
 
-	var newYVal = 0;
-	for (i = 1; i <= numOfSemesters; i++) {
-		if (yVal <= (650 + (divisor / 2)) - (divisor * i)) {
-			newYVal = 75 + (divisor * (numOfSemesters - i));
-		}
-		if (yVal > (650 - (divisor / 2))) {
-			newYVal = (650 - divisor);
-		}
-		if (yVal < 75) {
-			newYVal = 75;
+	//var newYVal = 0;
+	// for (i = 1; i <= numOfSemesters; i++) {
+	// 	if (yVal <= (650 + (divisor / 2)) - (divisor * i)) {
+	// 		newYVal = 75 + (divisor * (numOfSemesters - i));
+	// 	}
+	// 	if (yVal > (650 - (divisor / 2))) {
+	// 		newYVal = (650 - divisor);
+	// 	}
+	// 	if (yVal < 75) {
+	// 		newYVal = 75;
+	// 	}
+	// }
+
+	var newYVal = 75;
+	var distance = 1000;
+
+	//semesterAndYearObj... NEW WAY
+	for (semesterObject in semesterAndYearObj) {
+		if (semestersToKeep.indexOf(semesterObject) != -1) {
+			if (Math.abs(yVal - semesterAndYearObj[semesterObject].y_pos) <= distance) {
+				newYVal = semesterAndYearObj[semesterObject].y_pos;
+			}
 		}
 	}
 
@@ -361,6 +548,8 @@ function computeXVal(xVal) {
 
 function drag(ev) {
 	courseDragged = ev.path[0].childNodes[0].childNodes[1].childNodes[0].data.trim().replace(' ', '_');
+	checkValidSemesters(courseDragged, selectedSchool, selectedDepartment, true);
+	
 }
 
 function initializeCytoscape() {

@@ -177,7 +177,7 @@ init = function() {
 
 									courseDragged = event.target[0]._private.data.id;
 									cy.$('#'+courseDragged).position('x', newXVal);
-									cy.$('#'+courseDragged).position('y', newYVal);
+									//cy.$('#'+courseDragged).position('y', newYVal);
 
 									for (var semesters = 0; semesters < numOfSemesters; semesters++) {
 										if (newYVal == cy.getElementById('semester_' + semesters)._private.position.y) {
@@ -187,6 +187,7 @@ init = function() {
 									toRemove = courseDragged.replace(' ', '_');
 
 									database.ref('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove).once("value").then(function(snapshot) {
+										console.log('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove);
 										snapshot.forEach(function(childSnapshot) {
 											switch (childSnapshot.key) {
 												case "school":
@@ -424,7 +425,18 @@ function writeUserInformationOnly(start, end, include_summer) {
 }
 
 function deleteUserData(courseSemester, courseID) {
-	database.ref('Users/' + currentUserId + '/courses/' + courseSemester + '/').child(courseID).remove();
+		database.ref('Users/' + currentUserId + '/courses/').once("value").then(function(outerSnapshot) {
+			outerSnapshot.forEach(function(innerSnapshot) {
+				innerSnapshot.forEach(function(childSnapshot) {
+					if (childSnapshot.key == courseID) {
+						console.log(outerSnapshot.key);
+						console.log(innerSnapshot.key);
+						database.ref('Users/' + currentUserId + '/courses/' + innerSnapshot.key + '/').child(courseID).remove();
+					}
+				});
+			});
+		});
+		//database.ref('Users/' + currentUserId + '/courses/' + courseSemester + '/').child(courseID).remove();
 }
 
 function computeYVal(yVal) {

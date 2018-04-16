@@ -185,7 +185,8 @@ init = function() {
 										}
 									}
 									toRemove = courseDragged.replace(' ', '_');
-
+								})
+								.then(function() {
 									database.ref('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove).once("value").then(function(snapshot) {
 										console.log('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove);
 										snapshot.forEach(function(childSnapshot) {

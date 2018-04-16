@@ -1,14 +1,6 @@
-var chosenSchool;
-var chosenDepartment;
 var cy;
-
-var courseDragged;
-
-var coursesAddedToSchedule = [];
-var coursesToBeStored = [];
-
-var user_semesters = [];
-var user_courses = [];
+var database;
+var currentUserId;
 
 var schools = [];
 var selectedSchool = "";
@@ -16,26 +8,24 @@ var departments = [];
 var selectedDepartment = "";
 var coursesForSchoolDepartment = {};
 
-var defaultStartSemester = "";
-var defaultEndSemester = "";
-var defaultSemesterCount = 0;
-var defaultIncludeSummer = true;
-
 var semesterAndYearObj = {};
+var semestersToKeep = [];
 
+var numOfSemesters;
 var divisor = 75;
 
-var semestersToKeep;
-
-var database;
-var user;
-var numOfSemesters;
-var include_summer = defaultIncludeSummer;
+var courseDragged;
 var dragSelectedSchool;
 var dragSelectedDepartment;
 
 var courseSemester;
 var toRemove;
+
+//User Data
+// var start;
+// var end;
+// var include_summer;
+// var isNewUser = false;
 
 // Modal Window for Create Account
 init = function() {
@@ -54,8 +44,9 @@ init = function() {
 	firebase.auth().onAuthStateChanged(function(user) {
 		if (user) {
 			database = firebase.database();
-			var userID = firebase.auth().currentUser.uid;
-			database.ref('/Users/' + userID).once("value").then(function(snapshot) {
+			currentUserId = firebase.auth().currentUser.uid;
+
+			database.ref('/Users/' + currentUserId).once("value").then(function(snapshot) {
 				var first = true;
 				snapshot.forEach(function(childSnapshot) {
 					if (childSnapshot.key == "isNewUser") {
@@ -64,22 +55,21 @@ init = function() {
 							fetch_text(htmlPage).then((html) => {
 								document.getElementById("surround_modal_content").innerHTML = html;
 							}).then(function() {
-				    	var modal = document.getElementById('gettingStartedModal');
-						modal.style.display = "block";
-		    			populateModalSemesterDropdowns();
+						    	var modal = document.getElementById('gettingStartedModal');
+								modal.style.display = "block";
+				    			populateModalSemesterDropdowns();
 
-		    			document.getElementById('submit_semester_data').addEventListener('click', function() {
-					    	var selectedStart = document.getElementById('starting_semesters').value;
-					    	var selectedEnd = document.getElementById('ending_semesters').value;
-					    	var includeSummerSemestersCheck = document.getElementById('include_summer').checked;
-					    	
-					    	writeUserInformationOnly(selectedStart, selectedEnd, includeSummerSemestersCheck);
+				    			document.getElementById('submit_semester_data').addEventListener('click', function() {
+							    	var selectedStart = document.getElementById('starting_semesters').value;
+							    	var selectedEnd = document.getElementById('ending_semesters').value;
+							    	var includeSummerSemestersCheck = document.getElementById('include_summer').checked;
+							    	
+							    	writeUserInformationOnly(selectedStart, selectedEnd, includeSummerSemestersCheck);
 
-					    });
-				    }).catch((error) => {
+							    });
+						    }).catch((error) => {
 								console.warn(error);
 							});
-
 						}
 						else {
 							//Initialize Cytoscape
@@ -93,17 +83,15 @@ init = function() {
 							populateSchoolDropdown(schoolDropdown);
 
 							schoolDropdown.addEventListener("change", function() {
+								selectedSchool = schoolDropdown.value;
 								emptyTable();
-								populateDepartmentDropdown(departmentDropdown, schoolDropdown.value);
-								departmentDropdown.style.display = "block";
+								populateDepartmentDropdown(departmentDropdown);
 							});
 
 							departmentDropdown.addEventListener("change", function() {
-								chosenDepartment = departmentDropdown.value;
+								selectedDepartment = departmentDropdown.value;
 								emptyTable();
-								if (departmentDropdown.value != "Select Department") {
-									populateCourseTable();
-								}
+								populateCourseTable();
 							});
 
 							var cyDiv = document.getElementById("cy");
@@ -126,12 +114,9 @@ init = function() {
 								var nodeId = event.target._private.data.id;
 								if (event.target._private.position.x < 50 && event.target._private.position.y < 50) {
 									cy.remove(cy.getElementById(nodeId));
-									coursesAddedToSchedule.splice(coursesAddedToSchedule.indexOf(nodeId), 1);
-									coursesToBeStored.splice(coursesToBeStored.indexOf(nodeId), 1);
 								}
 								else {
-									var uid = firebase.auth().currentUser.uid;
-									database.ref('Users/' + uid + '/courses').once('value').then(function(userCoursesSnapshot) {
+									database.ref('Users/' + currentUserId + '/courses').once('value').then(function(userCoursesSnapshot) {
 										userCoursesSnapshot.forEach(function(snapshotForSemester) {
 											snapshotForSemester.forEach(function(snapshotCourseList) {
 												var schoolString = "";
@@ -146,7 +131,7 @@ init = function() {
 														}
 													});
 
-													checkValidSemesters(nodeId, schoolString, departmentString, false);
+													//checkValidSemesters(nodeId, schoolString, departmentString, false);
 												}
 											});
 										});
@@ -161,19 +146,13 @@ init = function() {
 												courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
 											}
 										}
-										var courseID = courseDragged;
-										var x_pos = newXVal;
-										var start = cy.getElementById('semester_0')._private.style.label.value;
-										var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
-										writeUserData(courseSemester, courseID, x_pos, start, end, include_summer, false);	
+										writeUserData(courseSemester, courseDragged, newXVal, false);	
 									});
 								}
 							});
 
 							cy.on("grab", "node", function(event) {
-								console.log("test");
-								var uid = firebase.auth().currentUser.uid;
-								database.ref('Users/' + uid + '/courses').once('value').then(function(userCoursesSnapshot) {
+								database.ref('Users/' + currentUserId + '/courses').once('value').then(function(userCoursesSnapshot) {
 									userCoursesSnapshot.forEach(function(snapshotForSemester) {
 										snapshotForSemester.forEach(function(snapshotCourseList) {
 											var schoolString = "";
@@ -206,9 +185,8 @@ init = function() {
 										}
 									}
 									toRemove = courseDragged.replace(' ', '_');
-									var userID = firebase.auth().currentUser.uid;
 
-									var userData = database.ref('/Users/' + userID + '/courses/' + courseSemester + '/' + toRemove).once("value").then(function(snapshot) {
+									database.ref('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove).once("value").then(function(snapshot) {
 										snapshot.forEach(function(childSnapshot) {
 											switch (childSnapshot.key) {
 												case "school":
@@ -289,79 +267,63 @@ function createOptionsForStartingEndingSemesterDropdowns(semesterArray, dropdown
 
 function handleDrop(e) {
 	resetToDefaultColoring();
+	
 	var hasClass = false;
-	if (coursesAddedToSchedule.length > 0) {
-		for (var course in coursesAddedToSchedule) {
-			if (coursesAddedToSchedule[course] == courseDragged) {
-				hasClass = true;
+	database.ref('Users/' + currentUserId + '/courses').once('value').then(function(snapshot) {
+		snapshot.forEach(function(childSnapshot) {
+			childSnapshot.forEach(function(courseSnapshot) {
+				if (courseSnapshot.key == courseDragged) {
+					hasClass = true;
+				}
+			});
+		});
+	})
+	.then(function() {
+		if (hasClass) {
+			alert("Course has already been added!");
+		}
+		else {
+			if (e.layerX >= 50 && e.layerY >= 50) {
+				var xVal = computeXVal(e.layerX);
+				var yVal = computeYVal(e.layerY);
+				cy.add({
+			        group: "nodes",
+			        data: {
+			            id: courseDragged
+			        },
+			        position: { x: xVal, y: yVal }
+			    });
+
+			    cy.style()
+			        .selector(cy.getElementById(courseDragged))
+			            .css({
+			                'label': courseDragged.replace('_', ' '),
+			                'shape': "roundrectangle",
+			                'background-color': "#AAA",
+			                'width': 'label',
+			                'padding-left': '8px',
+			                'padding-right': '8px',
+			                'height': 'label',
+			                'padding-top': '8px',
+			                'padding-bottom': '8px',
+			                'text-valign': "center"
+			            })
+			        .update()
+			    ;
+		        
+	    		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+	    			if (yVal == cy.getElementById('semester_' + semesters)._private.position.y) {
+	    				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
+	    			}
+	    		}
+	    		writeUserData(courseSemester, courseDragged, xVal, true);
 			}
 		}
-	}
-	
-	if (hasClass) {
-		alert("Course has already been added!");
-	}
-	else {
-		if (e.layerX >= 50 && e.layerY >= 50) {
-			var xVal = computeXVal(e.layerX);
-			var yVal = computeYVal(e.layerY);
-			cy.add({
-		        group: "nodes",
-		        data: {
-		            id: courseDragged
-		        },
-		        position: { x: xVal, y: yVal }
-		    });
-
-		    cy.style()
-		        .selector(cy.getElementById(courseDragged))
-		            .css({
-		                'label': courseDragged.replace('_', ' '),
-		                'shape': "roundrectangle",
-		                'background-color': "#AAA",
-		                'width': 'label',
-		                'padding-left': '8px',
-		                'padding-right': '8px',
-		                'height': 'label',
-		                'padding-top': '8px',
-		                'padding-bottom': '8px',
-		                'text-valign': "center"
-		            })
-		        .update()
-		    ;
-
-		    coursesAddedToSchedule.push(courseDragged);
-
-		    var courseToAdd = {
-		    	"id":courseDragged,
-		    	"xPos":xVal,
-		    	"yPos":yVal
-		    };
-		    coursesToBeStored.push(courseToAdd);
-		    //Write Courses
-		    //for (var storedCourses in coursesToBeStored) {
-	        	//if (coursesToBeStored[storedCourses].id == courseDragged.getAttribute("id")) {
-	        		//var yPos = coursesToBeStored[storedCourses].yPos;
-
-	        console.log(e.layerY);
-	        console.log(yVal);
-    		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
-    			console.log(cy.getElementById('semester_' + semesters)._private.position.y);
-    			console.log('semester_' + semesters);
-    			if (yVal == cy.getElementById('semester_' + semesters)._private.position.y) {
-    				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
-    			}
-    		}
-    		var courseID = courseDragged;
-    		var x_pos = xVal;
-    		var start = cy.getElementById('semester_0')._private.style.label.value;
-    		var end = cy.getElementById('semester_' + (numOfSemesters-1))._private.style.label.value;
-    		writeUserData(courseSemester, courseID, x_pos, start, end, include_summer, true);	        			
-	        	//}
-	        //}
-		}
-	}
-	checkForPrerequisites(courseID);
+		
+	})
+	.then(function() {
+		checkForPrerequisites(courseDragged);
+	});
 }
 
 function checkValidSemesters(courseID, school, department, highlightRows) {
@@ -398,7 +360,7 @@ function highlightValidSemestersToPlaceCourse() {
 	}
 
 	for (i = 0; i < indexesToHighlight.length; i++) {
-		var semesterString = "semester_" + indexesToHighlight[i];
+		var semesterString = "semester_edge_" + indexesToHighlight[i];
 
 		cy.style()
 	        .selector(cy.getElementById(semesterString))
@@ -417,7 +379,7 @@ function resetToDefaultColoring() {
 	}
 
 	for (i = 0; i < count; i++) {
-		var semesterString = "semester_" + i;
+		var semesterString = "semester_edge_" + i;
 
 		cy.style()
 	        .selector(cy.getElementById(semesterString))
@@ -430,66 +392,39 @@ function resetToDefaultColoring() {
 }
 
 function checkForPrerequisites(courseID) {
-	database.ref('Schools/' + selectedSchool + '/Departments/' + selectedDepartment + '/Courses/' + courseID).once('value').then(function(snapshot) {
-		snapshot.forEach(function(childSnapshot) {
-			switch (childSnapshot.key) {
-				case "courses":
-					userCourses = childSnapshot.val();
-					break;
-				case "end_semester":
-					var end = childSnapshot.val().split(' ');
-					endSemester = end[0];
-					endYear = parseInt(end[1]);
-					break;
-				case "include_summer_semesters":
-					includeSummerSemesters = childSnapshot.val();
-					break;
-				case "start_semester":
-					var start = childSnapshot.val().split(' ');
-					startSemester = start[0];
-					startYear = parseInt(start[1]);
-					break;
-			}
-		});
-	});
+	
 }
 
-function writeUserData(courseSemester, courseID, x_pos, start, end, include_summer, new_course) {
-	var userID = firebase.auth().currentUser.uid;
-	database = firebase.database();
-
+function writeUserData(courseSemester, courseID, x_pos, new_course) {
 	if (new_course) {
-		database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).set({
-			x_pos: x_pos,
-			department: selectedDepartment,
-			school: selectedSchool
+		database.ref('Users/' + currentUserId + '/courses/' + courseSemester + '/' + courseID).set({
+			x_pos: x_pos == undefined ? null : x_pos,
+			department: selectedDepartment == undefined ? null : selectedDepartment,
+			school: selectedSchool == undefined ? null : selectedSchool
 		});
 	}
 	else {
-		database.ref('Users/' + userID + '/courses/' + courseSemester + '/' + courseID).update({
-			x_pos: x_pos,
-			department: dragSelectedDepartment,
-			school: dragSelectedSchool
+		database.ref('Users/' + currentUserId + '/courses/' + courseSemester + '/' + courseID).update({
+			x_pos: x_pos == undefined ? null : x_pos,
+			department: dragSelectedDepartment == undefined ? null : dragSelectedDepartment,
+			school: dragSelectedSchool == undefined ? null : dragSelectedSchool
 		});
 	}
 }
 
 function writeUserInformationOnly(start, end, include_summer) {
-	var userID = firebase.auth().currentUser.uid;
-	database = firebase.database();
-	database.ref('Users/' + userID).update({
-		start_semester: start,
-		end_semester: end,
-		include_summer_semesters: include_summer,
-		isNewUser: false
+	database.ref('Users/' + currentUserId).update({
+		start_semester: start == undefined ? null : start,
+		end_semester: end == undefined ? null : end,
+		include_summer_semesters: include_summer == undefined ? null : include_summer,
+		isNewUser: false 
 	}).then(function() {
 		location.reload();
 	});
 }
 
 function deleteUserData(courseSemester, courseID) {
-	var userID = firebase.auth().currentUser.uid;
-	database.ref('Users/' + userID + '/courses/' + courseSemester + '/').child(courseID).remove();
+	database.ref('Users/' + currentUserId + '/courses/' + courseSemester + '/').child(courseID).remove();
 }
 
 function computeYVal(yVal) {
@@ -544,7 +479,6 @@ function computeXVal(xVal) {
 function drag(ev) {
 	courseDragged = ev.path[0].childNodes[0].childNodes[1].childNodes[0].data.trim().replace(' ', '_');
 	checkValidSemesters(courseDragged, selectedSchool, selectedDepartment, true);
-	
 }
 
 function initializeCytoscape() {
@@ -628,10 +562,6 @@ function initializeCytoscape() {
 	addSemesterRows();
 }
 
-function first_time_user() {
-	console.log("it works");
-}
-
 function addSemesterRows() {
 	var includeSummerSemesters = true;
 	var startYear = 0;
@@ -640,9 +570,7 @@ function addSemesterRows() {
 	var endSemester = "";
 	var userCourses = {};
 
-	var userID = firebase.auth().currentUser.uid;
-
-	var userData = database.ref('/Users/' + userID).once("value").then(function(snapshot) {
+	database.ref('/Users/' + currentUserId).once("value").then(function(snapshot) {
 		snapshot.forEach(function(childSnapshot) {
 			switch (childSnapshot.key) {
 				case "courses":
@@ -742,6 +670,7 @@ function addSemesterRows() {
 		    	currentYear++;
 		    }
 		}
+		resetToDefaultColoring();
 
 		//Add courses
 		//console.log(userCourses);
@@ -784,11 +713,11 @@ function addSemesterRows() {
 
 function populateSchoolDropdown(schoolDropdown) {
 	emptyDropdown(schoolDropdown);
-	var schoolData = database.ref('/Schools').once("value").then(function(snapshot) {
+	database.ref('/Schools').once("value").then(function(snapshot) {
 		var first = true;
 		snapshot.forEach(function(childSnapshot) {
 			if (childSnapshot.key == "Engineering and Applied Science") {
-				schools.push(childSnapshot.key);
+				//schools.push(childSnapshot.key);
 				if (first) {
 					first = false;
 					selectedSchool = childSnapshot.key;
@@ -796,21 +725,22 @@ function populateSchoolDropdown(schoolDropdown) {
 				var option = document.createElement("option");
 				option.text = childSnapshot.key;
 				schoolDropdown.add(option);
-				var departmentDropdown = document.getElementById("DepartmentDropdown");
-				populateDepartmentDropdown(departmentDropdown, childSnapshot.key);
-
 			}
 		});
+	})
+	.then(function() {
+		var departmentDropdown = document.getElementById("DepartmentDropdown");
+		populateDepartmentDropdown(departmentDropdown);
 	});
 }
 
-function populateDepartmentDropdown(departmentDropdown, selectedSchool2) {
+function populateDepartmentDropdown(departmentDropdown) {
 	emptyDropdown(departmentDropdown);
-	var departmentData = database.ref('/Schools').child(selectedSchool2).child("Departments").once("value").then(function(snapshot) {
+	var departmentData = database.ref('/Schools').child(selectedSchool).child("Departments").once("value").then(function(snapshot) {
 		var first = true;
 		snapshot.forEach(function(childSnapshot) {
 			if (childSnapshot.key == "COMPUTER SCIENCE AND ENGINEERING(E81)") {
-				departments.push(childSnapshot.key);
+				//departments.push(childSnapshot.key);
 				if (first) {
 					first = false;
 					selectedDepartment = childSnapshot.key;
@@ -818,9 +748,11 @@ function populateDepartmentDropdown(departmentDropdown, selectedSchool2) {
 				var option = document.createElement("option");
 				option.text = childSnapshot.key;
 				departmentDropdown.add(option);
-				populateCourseTable(selectedSchool2, childSnapshot.key);
 			}
 		});
+	})
+	.then(function() {
+		populateCourseTable();
 	});
 }
 
@@ -839,8 +771,8 @@ function emptyTable() {
 	}
 }
 
-function populateCourseTable(selectedSchool2, selectedDepartment2) {
-	var coursesData = database.ref('/Schools').child(selectedSchool2).child("Departments").child(selectedDepartment2).child("Courses").once("value").then(function(snapshot) {
+function populateCourseTable() {
+	var coursesData = database.ref('/Schools').child(selectedSchool).child("Departments").child(selectedDepartment).child("Courses").once("value").then(function(snapshot) {
 		coursesForSchoolDepartment = snapshot.val();
 
 		var courseTable = document.getElementById("course_listing");
@@ -849,6 +781,7 @@ function populateCourseTable(selectedSchool2, selectedDepartment2) {
 			var tableRow = document.createElement("tr");
 			tableRow.setAttribute("draggable", "true");
 			tableRow.setAttribute("ondragstart", "drag(event)");
+			tableRow.setAttribute("ondragend", "resetToDefaultColoring()");
 			var courseCodeAsId = childSnapshot.key;
 			tableRow.setAttribute("id", courseCodeAsId);
 			var tableCol = document.createElement("td");

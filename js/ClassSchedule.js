@@ -54,7 +54,8 @@ init = function() {
 							var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/GettingStartedModal.html";
 							fetch_text(htmlPage).then((html) => {
 								document.getElementById("surround_modal_content").innerHTML = html;
-							}).then(function() {
+							})
+							.then(function() {
 						    	var modal = document.getElementById('gettingStartedModal');
 								modal.style.display = "block";
 				    			populateModalSemesterDropdowns();
@@ -176,7 +177,7 @@ init = function() {
 									var newYVal = computeYVal(event.target._private.position.y);
 
 									courseDragged = event.target[0]._private.data.id;
-									cy.$('#'+courseDragged).position('x', newXVal);
+									//cy.$('#'+courseDragged).position('x', newXVal);
 									//cy.$('#'+courseDragged).position('y', newYVal);
 
 									for (var semesters = 0; semesters < numOfSemesters; semesters++) {
@@ -188,7 +189,6 @@ init = function() {
 								})
 								.then(function() {
 									database.ref('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove).once("value").then(function(snapshot) {
-										console.log('/Users/' + currentUserId + '/courses/' + courseSemester + '/' + toRemove);
 										snapshot.forEach(function(childSnapshot) {
 											switch (childSnapshot.key) {
 												case "school":
@@ -270,6 +270,7 @@ function createOptionsForStartingEndingSemesterDropdowns(semesterArray, dropdown
 function handleDrop(e) {
 	resetToDefaultColoring();
 	
+	var isYellow = false;
 	var hasClass = false;
 	database.ref('Users/' + currentUserId + '/courses').once('value').then(function(snapshot) {
 		snapshot.forEach(function(childSnapshot) {
@@ -281,50 +282,12 @@ function handleDrop(e) {
 		});
 	})
 	.then(function() {
-		if (hasClass) {
-			alert("Course has already been added!");
+		if (!hasClass) {
+			checkForPrerequisites(courseDragged, e);
 		}
 		else {
-			if (e.layerX >= 50 && e.layerY >= 50) {
-				var xVal = computeXVal(e.layerX);
-				var yVal = computeYVal(e.layerY);
-				cy.add({
-			        group: "nodes",
-			        data: {
-			            id: courseDragged
-			        },
-			        position: { x: xVal, y: yVal }
-			    });
-
-			    cy.style()
-			        .selector(cy.getElementById(courseDragged))
-			            .css({
-			                'label': courseDragged.replace('_', ' '),
-			                'shape': "roundrectangle",
-			                'background-color': "#AAA",
-			                'width': 'label',
-			                'padding-left': '8px',
-			                'padding-right': '8px',
-			                'height': 'label',
-			                'padding-top': '8px',
-			                'padding-bottom': '8px',
-			                'text-valign': "center"
-			            })
-			        .update()
-			    ;
-		        
-	    		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
-	    			if (yVal == cy.getElementById('semester_' + semesters)._private.position.y) {
-	    				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
-	    			}
-	    		}
-	    		writeUserData(courseSemester, courseDragged, xVal, true);
-			}
+			alert("Course has already been added!");
 		}
-		
-	})
-	.then(function() {
-		checkForPrerequisites(courseDragged);
 	});
 }
 
@@ -393,8 +356,428 @@ function resetToDefaultColoring() {
 	}
 }
 
-function checkForPrerequisites(courseID) {
+function checkForPrerequisites(courseID, e) {
+	var courseHasPrerequisites = false;
+	var courseHasCorequisites = false;
+	var corequisites = {};
+	var prerequisites = {};
+
+	database.ref('Schools/' + selectedSchool + '/Departments/' + selectedDepartment + '/Courses').once('value').then(function(snapshot) {
+		snapshot.forEach(function(courseSnapshot) {
+			if (courseSnapshot.key == courseID) {
+				courseSnapshot.forEach(function(propertySnapshot) {
+					if (propertySnapshot.key == "prerequisites") {
+						courseHasPrerequisites = true;
+						prerequisites = propertySnapshot.val();
+					}
+					else if (propertySnapshot.key == "corequisites") {
+						courseHasCorequisites = true;
+						corequisites = propertySnapshot.val();
+					}
+				});
+			}
+		});
+	})
+	.then(function() {
+		if (courseHasCorequisites || courseHasPrerequisites) {
+			var htmlPage = "http://ec2-18-218-250-72.us-east-2.compute.amazonaws.com/PrerequisiteModal.html";
+			fetch_text(htmlPage).then((html) => {
+				document.getElementById("surround_modal_content_for_prereqs").innerHTML = html;
+			})
+			.then(function() {
+		    	var modal = document.getElementById('prerequisiteModal');
+				modal.style.display = "block";
+    			populatePrerequisiteModal(courseHasCorequisites, corequisites, courseHasPrerequisites, prerequisites);
+
+    			//Add Event Listeners Below
+    			document.getElementById("submit_prereqs").addEventListener("click", function() {
+    				writePrereqData();
+    			});
+		    })
+		    .then(function() {
+		    	//just a holder to make the previous code finish before continuing
+		    })
+		    .catch((error) => {
+				console.warn(error);
+			});
+		}
+		else {
+			if (e.layerX >= 50 && e.layerY >= 50) {
+				var xVal = computeXVal(e.layerX);
+				var yVal = computeYVal(e.layerY);
+				cy.add({
+			        group: "nodes",
+			        data: {
+			            id: courseDragged
+			        },
+			        position: { x: xVal, y: yVal }
+			    });
+
+		    	cy.style()
+			        .selector(cy.getElementById(courseDragged))
+			            .css({
+			                'label': courseDragged.replace('_', ' '),
+			                'shape': "roundrectangle",
+			                'background-color': "#AAA",
+			                'width': 'label',
+			                'padding-left': '8px',
+			                'padding-right': '8px',
+			                'height': 'label',
+			                'padding-top': '8px',
+			                'padding-bottom': '8px',
+			                'text-valign': "center"
+			            })
+			        .update()
+			    ;
+		        
+	    		for (var semesters = 0; semesters < numOfSemesters; semesters++) {
+	    			if (yVal == cy.getElementById('semester_' + semesters)._private.position.y) {
+	    				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
+	    			}
+	    		}
+	    		writeUserData(courseSemester, courseDragged, xVal, true);
+			}
+		}
+	})
+}
+
+function populatePrerequisiteModal(has_coreqs, corequisites, has_prereqs, prerequisites) {
+	var hasCourses = false;
+	var hasSuggested = false;
+	var hasWarning = false;
+
+	if (has_coreqs) {
+		for (var coreqOption in corequisites) {
+			if (coreqOption == "courses") {
+				hasCourses = true;
+			}
+			else if (coreqOption == "suggested") {
+				hasSuggested = true;
+			}
+			else if (coreqOption == "warning") {
+				hasSuggested = true;
+			}
+		}
+	}
 	
+	if (has_prereqs) {
+		for (var prereqOption in prerequisites) {
+			if (prereqOption == "courses") {
+				hasCourses = true;
+			}
+			else if (prereqOption == "suggested") {
+				hasSuggested = true;
+			}
+			else if (prereqOption == "warning") {
+				hasWarning = true;
+			}
+		}
+	}
+
+	var currentSemesterRow = document.getElementById("course_dragged_table").insertRow(0);
+	var cell1 = currentSemesterRow.insertCell(0);
+	var cell2 = currentSemesterRow.insertCell(1);
+
+	cell1.innerHTML = courseDragged;
+
+	var courseDraggedSemesterDropdown = document.createElement("select");
+	courseDraggedSemesterDropdown.setAttribute("id", "course_dragged_semester_dropdown");
+	for (a = 0; a < semestersToKeep.length; a++) {
+		var option = document.createElement("option");
+		option.text = semestersToKeep[a];
+		courseDraggedSemesterDropdown.add(option);
+	}
+	cell2.appendChild(courseDraggedSemesterDropdown);
+
+	if (!hasCourses) {
+		var section1 = document.getElementById('required_courses');
+		section1.style.display = "none";
+	}
+	else {
+		count = 0;
+		if (has_prereqs) {
+			if (prerequisites.hasOwnProperty("courses")) {
+				var prereqCourses = prerequisites["courses"];
+				var prereqTable = document.getElementById("required_course_table");
+				count = prereqCourses.length;
+				for (i = 0; i < prereqCourses.length; i++) {
+					var tableRow = document.createElement("tr");
+
+					var courseCol = document.createElement("td");
+					courseCol.innerHTML = prereqCourses[i];
+
+					var semesterCol = document.createElement("td");
+					var semesterDropdown = document.createElement("select");
+					semesterDropdown.setAttribute("id", "semesters_dropdown_" + i);
+					checkValidSemesters(prereqCourses[i], selectedSchool, selectedDepartment, false);
+					for (j = 0; j < semestersToKeep.length; j++) {
+						var option = document.createElement("option");
+						option.text = semestersToKeep[j];
+						semesterDropdown.add(option);
+					}
+					semesterCol.appendChild(semesterDropdown);
+
+					var approvedCol = document.createElement("td");
+					var approvedInput = document.createElement("input");
+					approvedInput.setAttribute("type", "checkbox");
+					approvedInput.setAttribute("id", "approved" + i);
+					var approvedLabel = document.createElement("label");
+					approvedLabel.innerHTML = "Approved By Instructor";
+					approvedCol.appendChild(approvedInput);
+					approvedCol.appendChild(approvedLabel);
+
+					var existingCol = document.createElement("td");
+					var existingInput = document.createElement("input");
+					existingInput.setAttribute("type", "checkbox");
+					existingInput.setAttribute("id", "existing" + i);
+					var existingLabel = document.createElement("label");
+					existingLabel.innerHTML = "Already On Schedule";
+					existingCol.appendChild(existingInput);
+					existingCol.appendChild(existingLabel);
+
+					tableRow.appendChild(courseCol);
+					tableRow.appendChild(semesterCol);
+					tableRow.appendChild(approvedCol);
+					tableRow.appendChild(existingCol);
+					prereqTable.appendChild(tableRow);
+				}
+			}
+		}
+		if (has_coreqs) {
+			if (corequisites.hasOwnProperty("courses")) {
+				var coreqCourses = corequisites["courses"];
+				var coreqTable = document.getElementById("required_course_table");
+				for (i = 0; i < coreqCourses.length; i++) {
+					var tableRow = document.createElement("tr");
+
+					var courseCol = document.createElement("td");
+					courseCol.innerHTML = coreqCourses[i];
+
+					var semesterCol = document.createElement("td");
+					var semesterDropdown = document.createElement("select");
+					semesterDropdown.setAttribute("id", "semesters_dropdown_" + (i + count));
+					checkValidSemesters(coreqCourses[i], selectedSchool, selectedDepartment, false);
+					for (j = 0; j < semestersToKeep.length; j++) {
+						var option = document.createElement("option");
+						option.text = semestersToKeep[j];
+						semesterDropdown.add(option);
+					}
+					semesterCol.appendChild(semesterDropdown);
+
+					var approvedCol = document.createElement("td");
+					var approvedInput = document.createElement("input");
+					approvedInput.setAttribute("type", "checkbox");
+					approvedInput.setAttribute("id", "approved" + (i + count));
+					var approvedLabel = document.createElement("label");
+					approvedLabel.innerHTML = "Approved By Instructor";
+					approvedCol.appendChild(approvedInput);
+					approvedCol.appendChild(approvedLabel);
+
+					var existingCol = document.createElement("td");
+					var existingInput = document.createElement("input");
+					existingInput.setAttribute("type", "checkbox");
+					existingInput.setAttribute("id", "existing" + (i + count));
+					var existingLabel = document.createElement("label");
+					existingLabel.innerHTML = "Already On Schedule";
+					existingCol.appendChild(existingInput);
+					existingCol.appendChild(existingLabel);
+
+					tableRow.appendChild(courseCol);
+					tableRow.appendChild(semesterCol);
+					tableRow.appendChild(approvedCol);
+					tableRow.appendChild(existingCol);
+					prereqTable.appendChild(tableRow);
+				}
+			}
+		}
+	}
+
+	if (!hasSuggested) {
+		var section2 = document.getElementById('suggested_courses');
+		section2.style.display = "none";
+	}
+	else {
+		count = 0;
+		if (has_prereqs) {
+			if (prerequisites.hasOwnProperty("suggested")) {
+				var prereqCourses = prerequisites["suggested"];
+				var prereqTable = document.getElementById("suggested_course_table");
+				count = prereqCourses.length;
+				for (i = 0; i < prereqCourses.length; i++) {
+					var tableRow = document.createElement("tr");
+
+					var courseCol = document.createElement("td");
+					courseCol.innerHTML = prereqCourses[i];
+
+					var semesterCol = document.createElement("td");
+					var semesterDropdown = document.createElement("select");
+					semesterDropdown.setAttribute("id", "suggested_dropdown_" + i);
+					checkValidSemesters(prereqCourses[i], selectedSchool, selectedDepartment, false);
+					for (j = 0; j < semestersToKeep.length; j++) {
+						var option = document.createElement("option");
+						option.text = semestersToKeep[j];
+						semesterDropdown.add(option);
+					}
+					semesterCol.appendChild(semesterDropdown);
+
+					var approvedCol = document.createElement("td");
+					var approvedInput = document.createElement("input");
+					approvedInput.setAttribute("type", "checkbox");
+					approvedInput.setAttribute("id", "approved_suggested_" + i);
+					var approvedLabel = document.createElement("label");
+					approvedLabel.innerHTML = "Approved By Instructor";
+					approvedCol.appendChild(approvedInput);
+					approvedCol.appendChild(approvedLabel);
+
+					var existingCol = document.createElement("td");
+					var existingInput = document.createElement("input");
+					existingInput.setAttribute("type", "checkbox");
+					existingInput.setAttribute("id", "existing_suggested_" + i);
+					var existingLabel = document.createElement("label");
+					existingLabel.innerHTML = "Already On Schedule";
+					existingCol.appendChild(existingInput);
+					existingCol.appendChild(existingLabel);
+
+					tableRow.appendChild(courseCol);
+					tableRow.appendChild(semesterCol);
+					tableRow.appendChild(approvedCol);
+					tableRow.appendChild(existingCol);
+					prereqTable.appendChild(tableRow);
+				}
+			}
+		}
+		if (has_coreqs) {
+			if (corequisites.hasOwnProperty("suggested")) {
+				var coreqCourses = corequisites["suggested"];
+				var coreqTable = document.getElementById("suggested_course_table");
+				for (i = 0; i < coreqCourses.length; i++) {
+					var tableRow = document.createElement("tr");
+
+					var courseCol = document.createElement("td");
+					courseCol.innerHTML = coreqCourses[i];
+
+					var semesterCol = document.createElement("td");
+					var semesterDropdown = document.createElement("select");
+					semesterDropdown.setAttribute("id", "suggested_dropdown_" + (i + count));
+					checkValidSemesters(coreqCourses[i], selectedSchool, selectedDepartment, false);
+					for (j = 0; j < semestersToKeep.length; j++) {
+						var option = document.createElement("option");
+						option.text = semestersToKeep[j];
+						semesterDropdown.add(option);
+					}
+					semesterCol.appendChild(semesterDropdown);
+
+					var approvedCol = document.createElement("td");
+					var approvedInput = document.createElement("input");
+					approvedInput.setAttribute("type", "checkbox");
+					approvedInput.setAttribute("id", "approved_suggested_" + (i + count));
+					var approvedLabel = document.createElement("label");
+					approvedLabel.innerHTML = "Approved By Instructor";
+					approvedCol.appendChild(approvedInput);
+					approvedCol.appendChild(approvedLabel);
+
+					var existingCol = document.createElement("td");
+					var existingInput = document.createElement("input");
+					existingInput.setAttribute("type", "checkbox");
+					existingInput.setAttribute("id", "existing_suggested_" + (i + count));
+					var existingLabel = document.createElement("label");
+					existingLabel.innerHTML = "Already On Schedule / Don't Wish To Take";
+					existingCol.appendChild(existingInput);
+					existingCol.appendChild(existingLabel);
+
+					tableRow.appendChild(courseCol);
+					tableRow.appendChild(semesterCol);
+					tableRow.appendChild(approvedCol);
+					tableRow.appendChild(existingCol);
+					prereqTable.appendChild(tableRow);
+				}
+			}
+		}
+	}
+
+	if (!hasWarning) {
+		var section3 = document.getElementById('warning');
+		section3.style.display = "none";
+	}
+	else {
+		var warningText = document.getElementById("warning_text");
+		var warningString = "";
+		if (has_prereqs) {
+			if (prerequisites.hasOwnProperty("warning")) {
+				warningString += prerequisites["warning"];
+				warningString += " ";
+			}
+		}
+		if (has_coreqs) {
+			if (prerequisites.hasOwnProperty("warning")) {
+				warningString += corequisites["warning"];
+			}
+		}
+
+		warningText.innerHTML = warningString;
+	}
+
+	console.log(corequisites);
+	console.log(prerequisites);
+}
+
+function writePrereqData() {
+	database.ref('Users/' + currentUserId + "/courses/" + document.getElementById("course_dragged_semester_dropdown").value + "/" + courseDragged).set({
+		x_pos: 200,
+		department: selectedDepartment == undefined ? null : selectedDepartment,
+		school: selectedSchool == undefined ? null : selectedSchool
+	})
+	.then(function() {
+		database.ref('Users/' + currentUserId + "/courses/").once("value").then(function(snapshot) {
+			var requiredTable = document.getElementById("required_course_table");
+			var requiredTableRows = requiredTable.rows;
+			for (i = 1; i < requiredTableRows.length; i++) {
+				var cellsForRow = requiredTableRows[i].cells;
+
+				var courseID = cellsForRow[0].innerHTML;
+				var semester = cellsForRow[1].childNodes[0].value;
+				var approved = cellsForRow[2].childNodes[0].checked;
+				var alreadyOnSchedule = cellsForRow[3].childNodes[0].checked;
+
+				if (!approved && !alreadyOnSchedule) {
+					database.ref('Users/' + currentUserId + "/courses/" + semester + "/" + courseID).set({
+						x_pos: 200,
+						department: selectedDepartment == undefined ? null : selectedDepartment,
+						school: selectedSchool == undefined ? null : selectedSchool
+					})
+					.then(function() {
+						//do nothing
+					});
+				}
+			}
+
+			var suggestedTable = document.getElementById("suggested_course_table");
+			var suggestedTableRows = suggestedTable.rows;
+			for (i = 1; i < suggestedTableRows.length; i++) {
+				var cellsForRow = suggestedTableRows[i].cells;
+
+				var courseID = cellsForRow[0].innerHTML;
+				var semester = cellsForRow[1].childNodes[0].value;
+				var approved = cellsForRow[2].childNodes[0].checked;
+				var alreadyOnSchedule = cellsForRow[3].childNodes[0].checked;
+
+				if (!approved && !alreadyOnSchedule) {
+					database.ref('Users/' + currentUserId + "/courses/" + semester + "/" + courseID).set({
+						x_pos: 200,
+						department: selectedDepartment == undefined ? null : selectedDepartment,
+						school: selectedSchool == undefined ? null : selectedSchool
+					})
+					.then(function() {
+						//do nothing
+					});
+				}
+				
+			}
+		})
+		.then(function() {
+			location.reload();
+		});
+	});
 }
 
 function writeUserData(courseSemester, courseID, x_pos, new_course) {
@@ -430,8 +813,6 @@ function deleteUserData(courseSemester, courseID) {
 			outerSnapshot.forEach(function(innerSnapshot) {
 				innerSnapshot.forEach(function(childSnapshot) {
 					if (childSnapshot.key == courseID) {
-						console.log(outerSnapshot.key);
-						console.log(innerSnapshot.key);
 						database.ref('Users/' + currentUserId + '/courses/' + innerSnapshot.key + '/').child(courseID).remove();
 					}
 				});

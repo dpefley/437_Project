@@ -117,6 +117,7 @@ init = function() {
 									cy.remove(cy.getElementById(nodeId));
 								}
 								else {
+									var newXVal;
 									database.ref('Users/' + currentUserId + '/courses').once('value').then(function(userCoursesSnapshot) {
 										userCoursesSnapshot.forEach(function(snapshotForSemester) {
 											snapshotForSemester.forEach(function(snapshotCourseList) {
@@ -137,7 +138,7 @@ init = function() {
 											});
 										});
 									}).then(function() {
-										var newXVal = computeXVal(event.target._private.position.x);
+										newXVal = computeXVal(event.target._private.position.x);
 										var newYVal = computeYVal(event.target._private.position.y);
 										cy.$('#'+nodeId).position('x', newXVal);
 										cy.$('#'+nodeId).position('y', newYVal);
@@ -147,6 +148,8 @@ init = function() {
 												courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
 											}
 										}
+									})
+									.then(function() {
 										writeUserData(courseSemester, courseDragged, newXVal, false);	
 									});
 								}
@@ -362,6 +365,8 @@ function checkForPrerequisites(courseID, e) {
 	var corequisites = {};
 	var prerequisites = {};
 
+	var xVal = 500;
+
 	database.ref('Schools/' + selectedSchool + '/Departments/' + selectedDepartment + '/Courses').once('value').then(function(snapshot) {
 		snapshot.forEach(function(courseSnapshot) {
 			if (courseSnapshot.key == courseID) {
@@ -403,7 +408,7 @@ function checkForPrerequisites(courseID, e) {
 		}
 		else {
 			if (e.layerX >= 50 && e.layerY >= 50) {
-				var xVal = computeXVal(e.layerX);
+				xVal = computeXVal(e.layerX);
 				var yVal = computeYVal(e.layerY);
 				cy.add({
 			        group: "nodes",
@@ -435,10 +440,9 @@ function checkForPrerequisites(courseID, e) {
 	    				courseSemester = cy.getElementById('semester_' + semesters)._private.style.label.value;
 	    			}
 	    		}
-	    		writeUserData(courseSemester, courseDragged, xVal, true);
 			}
 		}
-	})
+	});
 }
 
 function populatePrerequisiteModal(has_coreqs, corequisites, has_prereqs, prerequisites) {
@@ -791,8 +795,8 @@ function writeUserData(courseSemester, courseID, x_pos, new_course) {
 	else {
 		database.ref('Users/' + currentUserId + '/courses/' + courseSemester + '/' + courseID).update({
 			x_pos: x_pos == undefined ? null : x_pos,
-			department: dragSelectedDepartment == undefined ? null : dragSelectedDepartment,
-			school: dragSelectedSchool == undefined ? null : dragSelectedSchool
+			department: selectedDepartment == undefined ? null : selectedDepartment, //should be dragSelectedDepartment
+			school: selectedSchool == undefined ? null : selectedSchool //should be dragSelectedDepartment
 		});
 	}
 }
